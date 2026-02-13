@@ -19,6 +19,7 @@ from database import engine
 from models import Base
 from routes.auth import router as auth_router
 from routes.quiz import router as quiz_router
+from routes.session import router as session_router
 
 
 @asynccontextmanager
@@ -45,6 +46,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(quiz_router)
+app.include_router(session_router)
 
 
 @app.get("/api/health")

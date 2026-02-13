@@ -125,3 +125,71 @@ class QuizSummary(BaseModel):
 class QuizUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=200)
     description: str | None = None
+
+
+# ---- Session -------------------------------------------------------------
+
+class SessionCreate(BaseModel):
+    quiz_id: str
+
+
+class ParticipantRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    nickname: str
+    score: int
+    joined_at: datetime
+
+
+class SessionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    quiz_id: str
+    owner_id: str
+    code: str
+    status: str
+    current_question_idx: int
+    created_at: datetime
+    participants: list[ParticipantRead]
+
+
+class SessionSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    code: str
+    status: str
+    created_at: datetime
+    quiz_title: str = ""
+    participant_count: int = 0
+
+
+class JoinSession(BaseModel):
+    code: str = Field(min_length=6, max_length=6)
+    nickname: str = Field(min_length=1, max_length=50)
+
+
+class SubmitAnswer(BaseModel):
+    answer_id: str
+    response_time: float = Field(ge=0)
+
+
+class ParticipantResponseRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    participant_id: str
+    question_id: str
+    answer_id: str | None
+    is_correct: bool
+    response_time: float | None
+    points_awarded: int
+
+
+class LeaderboardEntry(BaseModel):
+    participant_id: str
+    nickname: str
+    score: int
+    rank: int

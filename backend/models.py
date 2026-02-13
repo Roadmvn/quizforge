@@ -13,6 +13,8 @@ Design decisions:
   creation time.
 """
 
+import random
+import string
 import uuid
 from datetime import datetime
 
@@ -20,12 +22,18 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
     Text,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
+
+
+def _generate_code(length: int = 6) -> str:
+    """Generate a short alphanumeric code for session joining."""
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 
 class Base(DeclarativeBase):
@@ -105,3 +113,63 @@ class Answer(Base):
     order: int = Column(Integer, nullable=False, default=0)
 
     question = relationship("Question", back_populates="answers")
+
+
+# ---------------------------------------------------------------------------
+# Live Session
+# ---------------------------------------------------------------------------
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    quiz_id: str = Column(String(36), ForeignKey("quizzes.id"), nullable=False)
+    owner_id: str = Column(String(36), ForeignKey("users.id"), nullable=False)
+    code: str = Column(String(6), unique=True, nullable=False, default=_generate_code)
+    status: str = Column(String(20), nullable=False, default="lobby")
+    # status: lobby → active → revealing → finished
+    current_question_idx: int = Column(Integer, nullable=False, default=-1)
+    created_at: datetime = Column(DateTime, default=datetime.utcnow)
+
+    quiz = relationship("Quiz")
+    owner = relationship("User")
+    participants = relationship(
+        "Participant", back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Participant (anonymous player in a session)
+# ---------------------------------------------------------------------------
+class Participant(Base):
+    __tablename__ = "participants"
+
+    id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id: str = Column(String(36), ForeignKey("sessions.id"), nullable=False)
+    nickname: str = Column(String(50), nullable=False)
+    score: int = Column(Integer, nullable=False, default=0)
+    joined_at: datetime = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("Session", back_populates="participants")
+    responses = relationship(
+        "ParticipantResponse", back_populates="participant", cascade="all, delete-orphan"
+    )
+
+
+# ---------------------------------------------------------------------------
+# ParticipantResponse (one answer per participant per question)
+# ---------------------------------------------------------------------------
+class ParticipantResponse(Base):
+    __tablename__ = "participant_responses"
+
+    id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    participant_id: str = Column(String(36), ForeignKey("participants.id"), nullable=False)
+    question_id: str = Column(String(36), ForeignKey("questions.id"), nullable=False)
+    answer_id: str = Column(String(36), ForeignKey("answers.id"), nullable=True)
+    is_correct: bool = Column(Boolean, nullable=False, default=False)
+    response_time: float = Column(Float, nullable=True)  # seconds
+    points_awarded: int = Column(Integer, nullable=False, default=0)
+    answered_at: datetime = Column(DateTime, default=datetime.utcnow)
+
+    participant = relationship("Participant", back_populates="responses")
+    question = relationship("Question")
+    answer = relationship("Answer")
