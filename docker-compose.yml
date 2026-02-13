@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      - QUIZFORGE_SECRET_KEY=${QUIZFORGE_SECRET_KEY:-change-me-in-production}
+    volumes:
+      - db_data:/app/data
+    restart: unless-stopped
+    expose:
+      - "8000"
+
+  nginx:
+    build: ./frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:

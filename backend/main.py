@@ -10,6 +10,7 @@ Design decisions:
   which Nginx will serve at /.
 """
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -24,7 +25,7 @@ from routes.session import router as session_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables on startup
+    os.makedirs("data", exist_ok=True)
     Base.metadata.create_all(bind=engine)
     yield
 

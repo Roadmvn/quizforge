@@ -11,10 +11,12 @@ Design decisions:
   FastAPI's Depends() DI system.
 """
 
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-DATABASE_URL = "sqlite:///./quizforge.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/quizforge.db")
 
 engine = create_engine(
     DATABASE_URL,
