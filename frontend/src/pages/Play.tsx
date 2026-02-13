@@ -17,6 +17,7 @@ interface QuestionData {
 export default function Play() {
   const { sid } = useParams<{ sid: string }>();
   const pid = sessionStorage.getItem('pid') || '';
+  const ptoken = sessionStorage.getItem('ptoken') || '';
   const nickname = sessionStorage.getItem('nickname') || '';
 
   const [phase, setPhase] = useState<Phase>('waiting');
@@ -88,6 +89,7 @@ export default function Play() {
     sessionId: sid || '',
     role: 'participant',
     pid,
+    ptoken,
     onMessage: handleMessage,
   });
 

@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 
+interface JoinResponse {
+  id: string;
+  session_id: string;
+  token: string;
+}
+
 export default function Join() {
   const { code: urlCode } = useParams<{ code: string }>();
   const navigate = useNavigate();
@@ -15,18 +21,15 @@ export default function Join() {
     setError('');
     setLoading(true);
     try {
-      const res = await api.post<{ id: string }>('/sessions/join', {
+      // Single API call — backend returns session_id + participant token
+      const res = await api.post<JoinResponse>('/sessions/join', {
         code: code.toUpperCase(),
         nickname,
       });
-      // Get session ID from code
-      const session = await fetch(`/api/sessions/by-code/${code.toUpperCase()}`).then((r) =>
-        r.json()
-      );
-      // Store participant info for WebSocket auth
       sessionStorage.setItem('pid', res.id);
+      sessionStorage.setItem('ptoken', res.token);
       sessionStorage.setItem('nickname', nickname);
-      navigate(`/play/${session.session_id}`);
+      navigate(`/play/${res.session_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to join');
     } finally {

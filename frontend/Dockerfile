@@ -9,5 +9,8 @@ RUN npm run build
 # Serve stage — static files served by Nginx
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
-# SPA fallback handled by the root nginx.conf, not here
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget -q --spider http://localhost:80/ || exit 1
+
 EXPOSE 80

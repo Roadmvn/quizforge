@@ -13,7 +13,7 @@ Design decisions:
   creation time.
 """
 
-import random
+import secrets
 import string
 import uuid
 from datetime import datetime
@@ -27,13 +27,15 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 
 def _generate_code(length: int = 6) -> str:
-    """Generate a short alphanumeric code for session joining."""
-    return "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
+    """Generate a cryptographically secure short code for session joining."""
+    alphabet = string.ascii_uppercase + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 class Base(DeclarativeBase):
@@ -86,7 +88,7 @@ class Question(Base):
     __tablename__ = "questions"
 
     id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    quiz_id: str = Column(String(36), ForeignKey("quizzes.id"), nullable=False)
+    quiz_id: str = Column(String(36), ForeignKey("quizzes.id"), nullable=False, index=True)
     text: str = Column(Text, nullable=False)
     order: int = Column(Integer, nullable=False, default=0)
     time_limit: int = Column(Integer, nullable=False, default=30)  # seconds
@@ -107,7 +109,7 @@ class Answer(Base):
     __tablename__ = "answers"
 
     id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    question_id: str = Column(String(36), ForeignKey("questions.id"), nullable=False)
+    question_id: str = Column(String(36), ForeignKey("questions.id"), nullable=False, index=True)
     text: str = Column(String(500), nullable=False)
     is_correct: bool = Column(Boolean, nullable=False, default=False)
     order: int = Column(Integer, nullable=False, default=0)
@@ -124,9 +126,9 @@ class Session(Base):
     id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     quiz_id: str = Column(String(36), ForeignKey("quizzes.id"), nullable=False)
     owner_id: str = Column(String(36), ForeignKey("users.id"), nullable=False)
-    code: str = Column(String(6), unique=True, nullable=False, default=_generate_code)
+    code: str = Column(String(6), unique=True, nullable=False, default=_generate_code, index=True)
     status: str = Column(String(20), nullable=False, default="lobby")
-    # status: lobby → active → revealing → finished
+    # status: lobby -> active -> revealing -> finished
     current_question_idx: int = Column(Integer, nullable=False, default=-1)
     created_at: datetime = Column(DateTime, default=datetime.utcnow)
 
@@ -144,8 +146,9 @@ class Participant(Base):
     __tablename__ = "participants"
 
     id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    session_id: str = Column(String(36), ForeignKey("sessions.id"), nullable=False)
+    session_id: str = Column(String(36), ForeignKey("sessions.id"), nullable=False, index=True)
     nickname: str = Column(String(50), nullable=False)
+    token: str = Column(String(64), nullable=False)  # secure token for WS auth
     score: int = Column(Integer, nullable=False, default=0)
     joined_at: datetime = Column(DateTime, default=datetime.utcnow)
 
@@ -160,10 +163,13 @@ class Participant(Base):
 # ---------------------------------------------------------------------------
 class ParticipantResponse(Base):
     __tablename__ = "participant_responses"
+    __table_args__ = (
+        UniqueConstraint("participant_id", "question_id", name="uq_participant_question"),
+    )
 
     id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    participant_id: str = Column(String(36), ForeignKey("participants.id"), nullable=False)
-    question_id: str = Column(String(36), ForeignKey("questions.id"), nullable=False)
+    participant_id: str = Column(String(36), ForeignKey("participants.id"), nullable=False, index=True)
+    question_id: str = Column(String(36), ForeignKey("questions.id"), nullable=False, index=True)
     answer_id: str = Column(String(36), ForeignKey("answers.id"), nullable=True)
     is_correct: bool = Column(Boolean, nullable=False, default=False)
     response_time: float = Column(Float, nullable=True)  # seconds

@@ -14,8 +14,8 @@ export default function Dashboard({ user, onLogout }: Props) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get<QuizSummary[]>('/quizzes/').then(setQuizzes);
-    api.get<SessionSummary[]>('/sessions').then(setSessions);
+    api.get<QuizSummary[]>('/quizzes/').then(setQuizzes).catch(() => {});
+    api.get<SessionSummary[]>('/sessions').then(setSessions).catch(() => {});
   }, []);
 
   const deleteQuiz = async (id: string) => {

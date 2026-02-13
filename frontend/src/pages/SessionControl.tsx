@@ -27,8 +27,8 @@ export default function SessionControl() {
       setSession(s);
       setGameStatus(s.status);
       setQuestionIdx(s.current_question_idx);
-    });
-    api.get<{ qr_base64: string; join_url: string; code: string }>(`/sessions/${sid}/qrcode`).then(setQrData);
+    }).catch(() => {});
+    api.get<{ qr_base64: string; join_url: string; code: string }>(`/sessions/${sid}/qrcode`).then(setQrData).catch(() => {});
   }, [sid]);
 
   const handleMessage = useCallback((msg: WsMessage) => {
@@ -36,7 +36,7 @@ export default function SessionControl() {
       case 'participant_connected':
         setOnlineCount(msg.online_count as number);
         // Refresh session to get updated participants
-        if (sid) api.get<Session>(`/sessions/${sid}`).then(setSession);
+        if (sid) api.get<Session>(`/sessions/${sid}`).then(setSession).catch(() => {});
         break;
       case 'participant_disconnected':
         setOnlineCount(msg.online_count as number);

@@ -47,7 +47,10 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 def login(payload: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
-    if not user or not verify_password(payload.password, user.hashed_password):
+    # Always verify against something to prevent timing-based email enumeration
+    dummy_hash = "$2b$12$LJ3m4ys3Lg3Dlw.YBOSKiuIllNNkmMYMUn5mGEB./FDD0rQOkSO.a"
+    password_valid = verify_password(payload.password, user.hashed_password if user else dummy_hash)
+    if not user or not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
