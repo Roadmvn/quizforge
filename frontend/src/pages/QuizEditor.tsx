@@ -86,11 +86,11 @@ export default function QuizEditor() {
     try {
       // Validate
       for (const q of questions) {
-        if (!q.text.trim()) throw new Error('All questions must have text');
+        if (!q.text.trim()) throw new Error('Toutes les questions doivent avoir un texte');
         const filledAnswers = q.answers.filter((a) => a.text.trim());
-        if (filledAnswers.length < 2) throw new Error('Each question needs at least 2 answers');
+        if (filledAnswers.length < 2) throw new Error('Chaque question doit avoir au moins 2 réponses');
         if (!filledAnswers.some((a) => a.is_correct))
-          throw new Error('Each question needs a correct answer');
+          throw new Error('Chaque question doit avoir une bonne réponse');
       }
 
       const payload = {
@@ -121,7 +121,7 @@ export default function QuizEditor() {
       }
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed');
+      setError(err instanceof Error ? err.message : 'Échec de l\'enregistrement');
     } finally {
       setSaving(false);
     }
@@ -133,15 +133,15 @@ export default function QuizEditor() {
     <div className="min-h-screen bg-gray-950 text-white">
       <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-white">
-          &larr; Back
+          &larr; Retour
         </button>
-        <h1 className="text-lg font-semibold">{isNew ? 'New Quiz' : 'Edit Quiz'}</h1>
+        <h1 className="text-lg font-semibold">{isNew ? 'Nouveau Quiz' : 'Modifier le Quiz'}</h1>
         <button
           onClick={save}
           disabled={saving || !title.trim()}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition disabled:opacity-50"
         >
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </header>
 
@@ -155,14 +155,14 @@ export default function QuizEditor() {
         <div className="space-y-4">
           <input
             type="text"
-            placeholder="Quiz Title"
+            placeholder="Titre du quiz"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-xl font-semibold text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <input
             type="text"
-            placeholder="Description (optional)"
+            placeholder="Description (optionnel)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -173,9 +173,10 @@ export default function QuizEditor() {
           <div key={qi} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-indigo-400 font-medium">Question {qi + 1}</span>
+
               <div className="flex items-center gap-3">
                 <label className="text-sm text-gray-400">
-                  Timer:
+                  Chrono :
                   <input
                     type="number"
                     min={5}
@@ -191,14 +192,14 @@ export default function QuizEditor() {
                     onClick={() => removeQuestion(qi)}
                     className="text-red-400 hover:text-red-300 text-sm"
                   >
-                    Remove
+                    Supprimer
                   </button>
                 )}
               </div>
             </div>
 
             <textarea
-              placeholder="Enter your question..."
+              placeholder="Entrez votre question..."
               value={q.text}
               onChange={(e) => updateQuestion(qi, { text: e.target.value })}
               rows={2}
@@ -218,7 +219,7 @@ export default function QuizEditor() {
                 >
                   <input
                     type="text"
-                    placeholder={`Answer ${ai + 1}`}
+                    placeholder={`Réponse ${ai + 1}`}
                     value={a.text}
                     onChange={(e) => {
                       e.stopPropagation();
@@ -228,7 +229,7 @@ export default function QuizEditor() {
                     className="w-full bg-transparent text-white placeholder-gray-500 focus:outline-none text-sm"
                   />
                   {a.is_correct && (
-                    <span className="text-green-400 text-xs mt-1 block">Correct answer</span>
+                    <span className="text-green-400 text-xs mt-1 block">Bonne réponse</span>
                   )}
                 </div>
               ))}
@@ -240,7 +241,7 @@ export default function QuizEditor() {
           onClick={addQuestion}
           className="w-full py-3 border-2 border-dashed border-gray-700 rounded-xl text-gray-400 hover:text-white hover:border-gray-500 transition"
         >
-          + Add Question
+          + Ajouter une question
         </button>
       </main>
     </div>

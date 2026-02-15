@@ -159,6 +159,7 @@ class SessionSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
+    quiz_id: str
     code: str
     status: str
     created_at: datetime

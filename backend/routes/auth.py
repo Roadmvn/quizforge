@@ -2,12 +2,13 @@
 Auth routes: register + login.
 
 Design decisions:
-- Registration is open (no invite code) — for internal corporate use the
-  Nginx reverse proxy restricts access to the company network.
+- Registration is controlled via REGISTRATION_ENABLED env var (default: disabled).
 - Login returns a JWT in { access_token, token_type } format, compatible
   with OAuth2PasswordBearer so Swagger UI "Authorize" button works OOTB.
 - Duplicate email returns 409 Conflict (not 400) for semantic correctness.
 """
+
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -27,6 +28,11 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
+    if os.getenv("REGISTRATION_ENABLED", "false").lower() != "true":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Registration is disabled",
+        )
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

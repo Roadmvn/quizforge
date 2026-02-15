@@ -118,8 +118,8 @@ export default function Play() {
         {phase === 'waiting' && (
           <div className="text-center space-y-4">
             <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <h2 className="text-2xl font-bold">Waiting for the host...</h2>
-            <p className="text-gray-400">The game will start soon</p>
+            <h2 className="text-2xl font-bold">En attente de l'hôte...</h2>
+            <p className="text-gray-400">La partie va bientôt commencer</p>
           </div>
         )}
 
@@ -152,29 +152,24 @@ export default function Play() {
         {/* ANSWERED (waiting for reveal) */}
         {phase === 'answered' && (
           <div className="text-center space-y-4">
-            {result ? (
-              <>
-                <div className={`text-6xl ${result.is_correct ? '' : ''}`}>
-                  {result.is_correct ? '&#10003;' : '&#10007;'}
-                </div>
-                <h2 className={`text-3xl font-bold ${result.is_correct ? 'text-green-400' : 'text-red-400'}`}>
-                  {result.is_correct ? 'Correct!' : 'Wrong!'}
-                </h2>
-                <p className="text-indigo-400 text-xl">+{result.points_awarded} pts</p>
-                <p className="text-gray-400">Total: {result.total_score}</p>
-              </>
-            ) : (
-              <>
-                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                <h2 className="text-xl font-bold">Answer submitted!</h2>
-              </>
-            )}
+            <div className="text-6xl">⏳</div>
+            <h2 className="text-xl font-bold">Réponse envoyée !</h2>
+            <p className="text-gray-400">En attente de la révélation...</p>
           </div>
         )}
 
         {/* REVEALED */}
         {phase === 'revealed' && question && (
           <div className="w-full max-w-lg space-y-6">
+            {result && (
+              <div className="text-center space-y-2">
+                <div className="text-5xl">{result.is_correct ? '\u2705' : '\u274C'}</div>
+                <h2 className={`text-2xl font-bold ${result.is_correct ? 'text-green-400' : 'text-red-400'}`}>
+                  {result.is_correct ? 'Correct !' : 'Faux !'}
+                </h2>
+                <p className="text-indigo-400 text-xl">+{result.points_awarded} pts</p>
+              </div>
+            )}
             <h2 className="text-xl font-bold text-center">{question.text}</h2>
             <div className="grid grid-cols-2 gap-3">
               {question.answers.map((a) => (
@@ -189,14 +184,16 @@ export default function Play() {
                   }`}
                 >
                   {a.text}
-                  {a.is_correct && <span className="ml-1">&#10003;</span>}
+                  {a.is_correct && <span className="ml-1">{'\u2713'}</span>}
                 </div>
               ))}
             </div>
             {myRank && (
               <div className="text-center bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <p className="text-gray-400">Your rank</p>
-                <p className="text-3xl font-bold text-indigo-400">#{myRank.rank}</p>
+                <p className="text-gray-400">Votre classement</p>
+                <p className="text-3xl font-bold text-indigo-400">
+                  {myRank.rank === 1 ? '\uD83E\uDD47' : myRank.rank === 2 ? '\uD83E\uDD48' : myRank.rank === 3 ? '\uD83E\uDD49' : `#${myRank.rank}`}
+                </p>
                 <p className="text-gray-400">{myRank.score} pts</p>
               </div>
             )}
@@ -206,10 +203,13 @@ export default function Play() {
         {/* FINISHED */}
         {phase === 'finished' && (
           <div className="w-full max-w-md space-y-6 text-center">
-            <h2 className="text-3xl font-bold">Game Over!</h2>
+            <h2 className="text-3xl font-bold">{'\uD83C\uDFC1'} Partie terminée !</h2>
             {myRank && (
               <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-                <p className="text-gray-400">You finished</p>
+                <p className="text-5xl mb-2">
+                  {myRank.rank === 1 ? '\uD83C\uDFC6' : myRank.rank === 2 ? '\uD83E\uDD48' : myRank.rank === 3 ? '\uD83E\uDD49' : '\uD83C\uDFAE'}
+                </p>
+                <p className="text-gray-400">Vous terminez</p>
                 <p className={`text-5xl font-bold ${myRank.rank === 1 ? 'text-yellow-400' : 'text-indigo-400'}`}>
                   #{myRank.rank}
                 </p>
@@ -225,14 +225,12 @@ export default function Play() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      e.rank === 1 ? 'bg-yellow-500 text-black' : e.rank === 2 ? 'bg-gray-400 text-black' : e.rank === 3 ? 'bg-orange-600' : 'bg-gray-700'
-                    }`}>
-                      {e.rank}
+                    <span className="text-lg">
+                      {e.rank === 1 ? '\uD83E\uDD47' : e.rank === 2 ? '\uD83E\uDD48' : e.rank === 3 ? '\uD83E\uDD49' : `${e.rank}.`}
                     </span>
                     <span>{e.nickname}</span>
                   </div>
-                  <span className="font-mono">{e.score}</span>
+                  <span className="font-mono text-indigo-400">{e.score} pts</span>
                 </div>
               ))}
             </div>

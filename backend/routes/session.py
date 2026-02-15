@@ -4,8 +4,7 @@ Session routes: create, join, control, and WebSocket endpoints.
 Flow:
 1. Admin POST /sessions -> creates a session in "lobby" status
 2. Participants POST /sessions/join -> get participant_id + token back
-3. Both connect via WebSocket (/ws/session/{sid}?role=admin&token=JWT
-   or /ws/session/{sid}?role=participant&pid=...&ptoken=...)
+3. Both connect via WebSocket (/ws/session/{sid}), then send auth as first message
 4. Admin sends commands: start_game, next_question, reveal_answer, end_game
 5. Server processes, updates DB, broadcasts state to all via WebSocket
 
@@ -21,7 +20,7 @@ import json
 import logging
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DBSession, joinedload
 
@@ -30,11 +29,9 @@ from models import Answer, Participant, ParticipantResponse, Question, Quiz, Ses
 from schemas import (
     JoinSession,
     LeaderboardEntry,
-    ParticipantRead,
     SessionCreate,
     SessionRead,
     SessionSummary,
-    SubmitAnswer,
 )
 from services.auth import get_current_user, SECRET_KEY, ALGORITHM
 from services.qrcode import generate_qr_base64
@@ -136,6 +133,7 @@ def list_sessions(
     return [
         SessionSummary(
             id=s.id,
+            quiz_id=s.quiz_id,
             code=s.code,
             status=s.status,
             created_at=s.created_at,
@@ -161,13 +159,18 @@ def get_session(
 @router.get("/api/sessions/{session_id}/qrcode")
 def get_qr_code(
     session_id: str,
-    base_url: str = Query(default="http://localhost:5173"),
+    request: Request,
+    base_url: str = Query(default=""),
     db: DBSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     session = _get_session_or_404(session_id, db)
     if session.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your session")
+    if not base_url:
+        scheme = request.headers.get("x-forwarded-proto", "http")
+        host = request.headers.get("host", "localhost")
+        base_url = f"{scheme}://{host}"
     join_url = f"{base_url}/join/{session.code}"
     return {"qr_base64": generate_qr_base64(join_url), "join_url": join_url, "code": session.code}
 
@@ -241,11 +244,138 @@ def export_csv(
 
 
 # ---------------------------------------------------------------------------
+# REST: Session analytics (admin, JWT-protected)
+# ---------------------------------------------------------------------------
+
+@router.get("/api/sessions/{session_id}/analytics")
+def get_session_analytics(
+    session_id: str,
+    db: DBSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    session = _get_session_or_404(session_id, db)
+    if session.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your session")
+
+    quiz = db.query(Quiz).options(
+        joinedload(Quiz.questions).joinedload(Question.answers)
+    ).filter(Quiz.id == session.quiz_id).first()
+
+    questions = sorted(quiz.questions, key=lambda q: q.order)
+
+    participants = (
+        db.query(Participant)
+        .options(joinedload(Participant.responses))
+        .filter(Participant.session_id == session.id)
+        .order_by(Participant.score.desc())
+        .all()
+    )
+
+    total_participants = len(participants)
+
+    # Build per-question stats
+    questions_stats = []
+    all_correct = 0
+    all_responses = 0
+
+    for q in questions:
+        responses = (
+            db.query(ParticipantResponse)
+            .filter(ParticipantResponse.question_id == q.id)
+            .join(Participant)
+            .filter(Participant.session_id == session.id)
+            .all()
+        )
+        total_resp = len(responses)
+        correct_resp = sum(1 for r in responses if r.is_correct)
+        avg_time = (
+            sum(r.response_time for r in responses if r.response_time is not None) / total_resp
+            if total_resp > 0 else 0
+        )
+
+        all_correct += correct_resp
+        all_responses += total_resp
+
+        # Response distribution per answer choice
+        answer_distribution = []
+        for a in sorted(q.answers, key=lambda a: a.order):
+            count = sum(1 for r in responses if r.answer_id == a.id)
+            answer_distribution.append({
+                "answer_id": a.id,
+                "text": a.text,
+                "is_correct": a.is_correct,
+                "count": count,
+                "percentage": round(count / total_resp * 100, 1) if total_resp > 0 else 0,
+            })
+
+        questions_stats.append({
+            "question_id": q.id,
+            "text": q.text,
+            "order": q.order,
+            "time_limit": q.time_limit,
+            "total_responses": total_resp,
+            "correct_percentage": round(correct_resp / total_resp * 100, 1) if total_resp > 0 else 0,
+            "avg_response_time": round(avg_time, 2),
+            "answer_distribution": answer_distribution,
+        })
+
+    # Leaderboard with detailed stats
+    leaderboard = []
+    for rank, p in enumerate(participants, 1):
+        p_responses = [r for r in p.responses]
+        p_correct = sum(1 for r in p_responses if r.is_correct)
+        p_avg_time = (
+            sum(r.response_time for r in p_responses if r.response_time is not None) / len(p_responses)
+            if p_responses else 0
+        )
+        leaderboard.append({
+            "rank": rank,
+            "participant_id": p.id,
+            "nickname": p.nickname,
+            "score": p.score,
+            "correct_answers": p_correct,
+            "total_answers": len(p_responses),
+            "avg_response_time": round(p_avg_time, 2),
+        })
+
+    # Easiest / hardest questions
+    easiest = None
+    hardest = None
+    for qs in questions_stats:
+        if qs["total_responses"] == 0:
+            continue
+        if easiest is None or qs["correct_percentage"] > easiest["correct_percentage"]:
+            easiest = qs
+        if hardest is None or qs["correct_percentage"] < hardest["correct_percentage"]:
+            hardest = qs
+
+    return {
+        "session": {
+            "id": session.id,
+            "code": session.code,
+            "status": session.status,
+            "created_at": session.created_at.isoformat(),
+            "quiz_title": quiz.title,
+            "total_participants": total_participants,
+            "total_questions": len(questions),
+        },
+        "questions": questions_stats,
+        "leaderboard": leaderboard,
+        "global_stats": {
+            "avg_score": round(sum(p.score for p in participants) / total_participants, 1) if total_participants > 0 else 0,
+            "success_rate": round(all_correct / all_responses * 100, 1) if all_responses > 0 else 0,
+            "easiest_question": {"question_id": easiest["question_id"], "text": easiest["text"], "correct_percentage": easiest["correct_percentage"]} if easiest else None,
+            "hardest_question": {"question_id": hardest["question_id"], "text": hardest["text"], "correct_percentage": hardest["correct_percentage"]} if hardest else None,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # REST: Participant join (no auth)
 # ---------------------------------------------------------------------------
 
 @router.post("/api/sessions/join", status_code=201)
-def join_session(payload: JoinSession, db: DBSession = Depends(get_db)):
+async def join_session(payload: JoinSession, db: DBSession = Depends(get_db)):
     session = db.query(Session).filter(Session.code == payload.code.upper()).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -269,6 +399,19 @@ def join_session(payload: JoinSession, db: DBSession = Depends(get_db)):
     db.add(participant)
     db.commit()
     db.refresh(participant)
+
+    total_participants = (
+        db.query(Participant)
+        .filter(Participant.session_id == session.id)
+        .count()
+    )
+    await hub.send_to_admin(session.id, {
+        "type": "participant_joined",
+        "participant_id": participant.id,
+        "nickname": participant.nickname,
+        "total_participants": total_participants,
+    })
+
     return {
         "id": participant.id,
         "nickname": participant.nickname,
@@ -307,19 +450,31 @@ def get_session_by_code(code: str, db: DBSession = Depends(get_db)):
 async def ws_session(
     websocket: WebSocket,
     session_id: str,
-    role: str = Query(...),
-    token: str = Query(default=None),
-    pid: str = Query(default=None),
-    ptoken: str = Query(default=None),
 ):
     """
     WebSocket entry point.
-    - Admin: role=admin&token=JWT
-    - Participant: role=participant&pid=participant_id&ptoken=participant_token
+    First message must be an auth payload:
+    - Admin: {"type": "auth", "role": "admin", "token": "JWT"}
+    - Participant: {"type": "auth", "role": "participant", "pid": "...", "ptoken": "..."}
+    No other messages are accepted before auth succeeds.
     """
-    conn = None  # Initialize before try to prevent NameError
+    await websocket.accept()
+
+    conn = None
+    role = None
+    pid = None
 
     try:
+        # Wait for auth message
+        raw = await websocket.receive_text()
+        auth_data = json.loads(raw)
+
+        if auth_data.get("type") != "auth":
+            await websocket.close(code=4001)
+            return
+
+        role = auth_data.get("role")
+
         db = _fresh_db()
         try:
             session = db.query(Session).filter(Session.id == session_id).first()
@@ -328,6 +483,7 @@ async def ws_session(
                 return
 
             if role == "admin":
+                token = auth_data.get("token")
                 if not token:
                     await websocket.close(code=4001)
                     return
@@ -343,6 +499,8 @@ async def ws_session(
                 conn = await hub.connect(session_id, websocket, "admin")
 
             elif role == "participant":
+                pid = auth_data.get("pid")
+                ptoken = auth_data.get("ptoken")
                 if not pid or not ptoken:
                     await websocket.close(code=4001)
                     return
@@ -370,7 +528,9 @@ async def ws_session(
         finally:
             db.close()
 
-        # Message loop — each message gets its own DB session
+        await websocket.send_text(json.dumps({"type": "auth_ok"}))
+
+        # Message loop
         while True:
             raw = await websocket.receive_text()
             data = json.loads(raw)
@@ -430,6 +590,7 @@ async def _handle_admin_message(session_id: str, msg_type: str, data: dict):
                 "total_questions": len(questions),
                 **_question_payload(question, reveal=False),
             })
+            hub.mark_question_sent(session_id)
 
         elif msg_type == "next_question":
             if session.status not in ("active", "revealing"):
@@ -448,6 +609,7 @@ async def _handle_admin_message(session_id: str, msg_type: str, data: dict):
                 "total_questions": len(questions),
                 **_question_payload(question, reveal=False),
             })
+            hub.mark_question_sent(session_id)
 
         elif msg_type == "reveal_answer":
             if session.status not in ("active", "revealing"):
@@ -519,7 +681,9 @@ async def _handle_participant_message(
                 return
 
             answer_id = data.get("answer_id")
-            response_time = data.get("response_time", 0)
+
+            server_elapsed = hub.get_elapsed_since_question(session_id)
+            response_time = server_elapsed if server_elapsed is not None else 0
 
             quiz = db.query(Quiz).options(
                 joinedload(Quiz.questions).joinedload(Question.answers)
@@ -530,6 +694,7 @@ async def _handle_participant_message(
                 return
 
             question = questions[session.current_question_idx]
+            response_time = min(response_time, question.time_limit)
 
             # Validate answer belongs to this question
             answer = db.query(Answer).filter(

@@ -24,7 +24,7 @@ export default function Login({ onLogin, onRegister }: Props) {
         await onLogin(email, password);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setLoading(false);
     }
@@ -36,7 +36,7 @@ export default function Login({ onLogin, onRegister }: Props) {
         <h1 className="text-3xl font-bold text-center mb-2 text-white">
           <span className="text-indigo-400">Quiz</span>Forge
         </h1>
-        <p className="text-gray-400 text-center mb-8">Cybersecurity Training Platform</p>
+        <p className="text-gray-400 text-center mb-8">Plateforme de formation en cybersécurité</p>
 
         <div className="flex mb-6 bg-gray-800 rounded-lg p-1">
           <button
@@ -45,7 +45,7 @@ export default function Login({ onLogin, onRegister }: Props) {
               !isRegister ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
-            Login
+            Connexion
           </button>
           <button
             onClick={() => setIsRegister(true)}
@@ -53,7 +53,7 @@ export default function Login({ onLogin, onRegister }: Props) {
               isRegister ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
-            Register
+            Inscription
           </button>
         </div>
 
@@ -61,7 +61,7 @@ export default function Login({ onLogin, onRegister }: Props) {
           {isRegister && (
             <input
               type="text"
-              placeholder="Display Name"
+              placeholder="Nom d'affichage"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -78,7 +78,7 @@ export default function Login({ onLogin, onRegister }: Props) {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Mot de passe"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -91,7 +91,7 @@ export default function Login({ onLogin, onRegister }: Props) {
             disabled={loading}
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition disabled:opacity-50"
           >
-            {loading ? '...' : isRegister ? 'Create Account' : 'Sign In'}
+            {loading ? '...' : isRegister ? 'Créer un compte' : 'Se connecter'}
           </button>
         </form>
       </div>

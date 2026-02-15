@@ -24,7 +24,9 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import User
 
-SECRET_KEY = os.getenv("QUIZFORGE_SECRET_KEY", "dev-secret-change-me-in-prod")
+SECRET_KEY = os.getenv("QUIZFORGE_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("QUIZFORGE_SECRET_KEY environment variable is required")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 

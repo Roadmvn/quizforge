@@ -2,7 +2,10 @@ services:
   backend:
     build: ./backend
     environment:
-      - QUIZFORGE_SECRET_KEY=${QUIZFORGE_SECRET_KEY:-change-me-in-production}
+      - QUIZFORGE_SECRET_KEY=${QUIZFORGE_SECRET_KEY:?QUIZFORGE_SECRET_KEY is required}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8080}
+      - REGISTRATION_ENABLED=${REGISTRATION_ENABLED:-false}
+      - HOST_LAN_IP=${HOST_LAN_IP:-127.0.0.1}
     volumes:
       - db_data:/app/data
     restart: unless-stopped
@@ -18,7 +21,7 @@ services:
   nginx:
     build: ./frontend
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

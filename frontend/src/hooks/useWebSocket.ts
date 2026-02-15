@@ -19,33 +19,35 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
   const reconnectAttempts = useRef(0);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const unmountedRef = useRef(false);
-
-  const buildUrl = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    let url = `${protocol}//${host}/ws/session/${sessionId}?role=${role}`;
-    if (token) url += `&token=${token}`;
-    if (pid) url += `&pid=${pid}`;
-    if (ptoken) url += `&ptoken=${ptoken}`;
-    return url;
-  }, [sessionId, role, token, pid, ptoken]);
+  const authenticatedRef = useRef(false);
 
   const connect = useCallback(() => {
     if (unmountedRef.current) return;
 
-    const ws = new WebSocket(buildUrl());
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const url = `${protocol}//${host}/ws/session/${sessionId}`;
+
+    const ws = new WebSocket(url);
     wsRef.current = ws;
+    authenticatedRef.current = false;
 
     ws.onopen = () => {
-      setConnected(true);
-      reconnectAttempts.current = 0;
+      const authMsg: Record<string, string> = { type: 'auth', role };
+      if (role === 'admin' && token) {
+        authMsg.token = token;
+      } else if (role === 'participant') {
+        if (pid) authMsg.pid = pid;
+        if (ptoken) authMsg.ptoken = ptoken;
+      }
+      ws.send(JSON.stringify(authMsg));
     };
 
     ws.onclose = (e) => {
       setConnected(false);
-      // Don't reconnect on auth errors (4001, 4003, 4004) or intentional close
+      authenticatedRef.current = false;
       if (unmountedRef.current || e.code >= 4000) return;
       if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
         const delay = BASE_DELAY * Math.pow(2, reconnectAttempts.current);
@@ -57,10 +59,18 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
     ws.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
+        if (!authenticatedRef.current) {
+          if (data.type === 'auth_ok') {
+            authenticatedRef.current = true;
+            setConnected(true);
+            reconnectAttempts.current = 0;
+          }
+          return;
+        }
         onMessageRef.current(data);
       } catch { /* ignore malformed */ }
     };
-  }, [buildUrl]);
+  }, [sessionId, role, token, pid, ptoken]);
 
   useEffect(() => {
     unmountedRef.current = false;
@@ -73,7 +83,7 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
   }, [connect]);
 
   const send = useCallback((msg: WsMessage) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+    if (wsRef.current?.readyState === WebSocket.OPEN && authenticatedRef.current) {
       wsRef.current.send(JSON.stringify(msg));
     }
   }, []);

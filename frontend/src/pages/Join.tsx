@@ -31,7 +31,7 @@ export default function Join() {
       sessionStorage.setItem('nickname', nickname);
       navigate(`/play/${res.session_id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to join');
+      setError(err instanceof Error ? err.message : 'Impossible de rejoindre');
     } finally {
       setLoading(false);
     }
@@ -43,12 +43,12 @@ export default function Join() {
         <h1 className="text-3xl font-bold text-center mb-2 text-white">
           <span className="text-indigo-400">Quiz</span>Forge
         </h1>
-        <p className="text-gray-400 text-center mb-8">Join a live quiz</p>
+        <p className="text-gray-400 text-center mb-8">Rejoindre un quiz en direct</p>
 
         <form onSubmit={handleJoin} className="space-y-4">
           <input
             type="text"
-            placeholder="Game Code"
+            placeholder="Code de la partie"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             maxLength={6}
@@ -57,7 +57,7 @@ export default function Join() {
           />
           <input
             type="text"
-            placeholder="Your Nickname"
+            placeholder="Votre pseudo"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             maxLength={50}
@@ -70,7 +70,7 @@ export default function Join() {
             disabled={loading || code.length < 6}
             className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-lg transition disabled:opacity-50"
           >
-            {loading ? 'Joining...' : 'Join Game'}
+            {loading ? 'Connexion...' : 'Rejoindre'}
           </button>
         </form>
       </div>

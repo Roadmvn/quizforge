@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import QuizEditor from './pages/QuizEditor';
 import SessionControl from './pages/SessionControl';
+import SessionAnalytics from './pages/SessionAnalytics';
 import Join from './pages/Join';
 import Play from './pages/Play';
 
@@ -33,6 +34,7 @@ function App() {
             <Route path="/quiz/new" element={<QuizEditor />} />
             <Route path="/quiz/:id/edit" element={<QuizEditor />} />
             <Route path="/session/:sid" element={<SessionControl />} />
+            <Route path="/session/:sid/analytics" element={<SessionAnalytics />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </>
         ) : (

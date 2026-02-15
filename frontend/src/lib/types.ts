@@ -65,6 +65,7 @@ export interface Session {
 
 export interface SessionSummary {
   id: string;
+  quiz_id: string;
   code: string;
   status: string;
   created_at: string;
