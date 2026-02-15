@@ -2,22 +2,27 @@
 set -euo pipefail
 
 APP_DIR="/opt/quizforge"
-COMPOSE_URL="https://raw.githubusercontent.com/Roadmvn/quizforge/main/docker-compose.prod.yml"
-NGINX_URL="https://raw.githubusercontent.com/Roadmvn/quizforge/main/nginx.prod.conf"
-ENV_URL="https://raw.githubusercontent.com/Roadmvn/quizforge/main/.env.example"
+REPO_RAW="https://raw.githubusercontent.com/Roadmvn/quizforge/main"
 
 echo "=== QuizForge - Setup VPS ==="
 echo ""
 
-# Vérifier qu'on est root
 if [ "$EUID" -ne 0 ]; then
   echo "Erreur: lancer avec sudo"
   exit 1
 fi
 
-# 1. Demander les infos
-read -rp "Nom de domaine (ex: quiz.monsite.com): " DOMAIN
-read -rp "Email pour Let's Encrypt: " EMAIL
+# 1. Domaine ou IP ?
+read -rp "Nom de domaine (laisser vide pour utiliser l'IP): " DOMAIN
+if [ -z "$DOMAIN" ]; then
+  DOMAIN=$(hostname -I | awk '{print $1}')
+  USE_SSL=false
+  echo ">>> Mode IP: $DOMAIN (pas de SSL)"
+else
+  USE_SSL=true
+  read -rp "Email pour Let's Encrypt: " EMAIL
+fi
+
 read -rp "GitHub username (pour pull les images GHCR): " GH_USER
 read -rsp "GitHub Personal Access Token (scope: read:packages): " GH_TOKEN
 echo ""
@@ -34,63 +39,75 @@ else
   echo ">>> Docker déjà installé"
 fi
 
-# 3. Installer Certbot si absent
-if ! command -v certbot &> /dev/null; then
-  echo ">>> Installation de Certbot..."
-  apt-get update -qq
-  apt-get install -y -qq certbot
-else
-  echo ">>> Certbot déjà installé"
-fi
-
-# 4. Créer le répertoire
+# 3. Créer le répertoire
 echo ">>> Création de $APP_DIR..."
 mkdir -p "$APP_DIR"
 cd "$APP_DIR"
 
-# 5. Télécharger les fichiers de config
+# 4. Télécharger les fichiers
 echo ">>> Téléchargement des configs..."
-curl -fsSL "$COMPOSE_URL" -o docker-compose.prod.yml
-curl -fsSL "$NGINX_URL" -o nginx.prod.conf
-curl -fsSL "$ENV_URL" -o .env.example
+curl -fsSL "$REPO_RAW/docker-compose.prod.yml" -o docker-compose.prod.yml
+curl -fsSL "$REPO_RAW/.env.example" -o .env.example
 
-# 6. Remplacer le placeholder domaine dans nginx.prod.conf
-sed -i "s/__DOMAIN__/$DOMAIN/g" nginx.prod.conf
+if [ "$USE_SSL" = true ]; then
+  curl -fsSL "$REPO_RAW/nginx.prod.conf" -o nginx.prod.conf
+  sed -i "s/__DOMAIN__/$DOMAIN/g" nginx.prod.conf
+else
+  curl -fsSL "$REPO_RAW/nginx.conf" -o nginx.prod.conf
+fi
 
-# 7. Générer le .env
+# 5. Générer le .env
+if [ "$USE_SSL" = true ]; then
+  ORIGIN="https://$DOMAIN"
+else
+  ORIGIN="http://$DOMAIN"
+fi
+
 cat > .env <<EOF
 QUIZFORGE_SECRET_KEY=$SECRET_KEY
 DOMAIN=$DOMAIN
-ALLOWED_ORIGINS=https://$DOMAIN
+ALLOWED_ORIGINS=$ORIGIN
 REGISTRATION_ENABLED=false
 EOF
 
 echo ">>> .env généré (secret JWT auto-généré)"
 
-# 8. Obtenir le certificat SSL
-echo ">>> Obtention du certificat SSL..."
-certbot certonly --standalone -d "$DOMAIN" --email "$EMAIL" --agree-tos --non-interactive
+# 6. SSL si domaine
+if [ "$USE_SSL" = true ]; then
+  if ! command -v certbot &> /dev/null; then
+    apt-get update -qq
+    apt-get install -y -qq certbot
+  fi
+  echo ">>> Obtention du certificat SSL..."
+  certbot certonly --standalone -d "$DOMAIN" --email "$EMAIL" --agree-tos --non-interactive
 
-# 9. Login GHCR et pull les images
+  CRON_CMD="0 3 * * * certbot renew --quiet --deploy-hook 'cd $APP_DIR && docker compose -f docker-compose.prod.yml restart nginx'"
+  (crontab -l 2>/dev/null | grep -v certbot; echo "$CRON_CMD") | crontab -
+else
+  # Sans SSL: nginx écoute sur port 80 seulement, retirer port 443 du compose
+  sed -i '/"443:443"/d' docker-compose.prod.yml
+  sed -i '/letsencrypt/d' docker-compose.prod.yml
+  sed -i '/certbot-webroot/d' docker-compose.prod.yml
+fi
+
+# 7. Login GHCR et pull les images
 echo ">>> Login GHCR..."
 echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
 
 echo ">>> Pull des images..."
 docker compose -f docker-compose.prod.yml pull
 
-# 10. Lancer l'app
+# 8. Lancer l'app
 echo ">>> Lancement de QuizForge..."
 docker compose -f docker-compose.prod.yml up -d
 
-# 11. Cron pour renouvellement SSL
-CRON_CMD="0 3 * * * certbot renew --quiet --deploy-hook 'cd $APP_DIR && docker compose -f docker-compose.prod.yml restart nginx'"
-(crontab -l 2>/dev/null | grep -v certbot; echo "$CRON_CMD") | crontab -
-
 echo ""
 echo "=== QuizForge déployé ==="
-echo "URL: https://$DOMAIN"
+echo "URL: $ORIGIN"
 echo "Secret JWT: $SECRET_KEY"
-echo "Renouvellement SSL: cron quotidien à 3h"
+if [ "$USE_SSL" = true ]; then
+  echo "Renouvellement SSL: cron quotidien à 3h"
+fi
 echo ""
 echo "Pour activer l'inscription: modifier REGISTRATION_ENABLED=true dans $APP_DIR/.env"
 echo "puis: cd $APP_DIR && docker compose -f docker-compose.prod.yml restart backend"
