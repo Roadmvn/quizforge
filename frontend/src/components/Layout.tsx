@@ -55,6 +55,7 @@ export default function Layout({ user, onLogout, children }: Props) {
         <button
           onClick={toggleCollapsed}
           className="hidden md:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-slate-800 border border-slate-700 items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors z-10"
+          aria-label={collapsed ? 'Deplier la barre laterale' : 'Replier la barre laterale'}
         >
           <svg
             className={`w-3.5 h-3.5 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`}
@@ -146,6 +147,7 @@ export default function Layout({ user, onLogout, children }: Props) {
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-200"
+            aria-label="Ouvrir le menu"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />

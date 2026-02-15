@@ -8,7 +8,7 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
     ...(opts.headers as Record<string, string> || {}),
   };
   const res = await fetch(`${BASE}${path}`, { ...opts, headers });
-  if (res.status === 401 && token) {
+  if (res.status === 401 && token && !path.includes('/auth/me')) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';
@@ -29,7 +29,7 @@ export async function authFetch(path: string, opts: RequestInit = {}): Promise<R
     ...(opts.headers as Record<string, string> || {}),
   };
   const res = await fetch(`${BASE}${path}`, { ...opts, headers });
-  if (res.status === 401 && token) {
+  if (res.status === 401 && token && !path.includes('/auth/me')) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';

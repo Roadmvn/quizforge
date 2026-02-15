@@ -7,8 +7,8 @@ Design decisions:
   if you ever need token verification by a separate service.
 - bcrypt used directly (not via passlib) for password hashing: avoids
   passlib/bcrypt version incompatibilities, fewer dependencies.
-- Token expiry: 24h — training sessions are typically half-day to full-day;
-  avoids annoying re-logins mid-session.
+- Token expiry: 2h — short-lived tokens limit exposure if leaked;
+  admin re-authenticates between sessions.
 - The secret key MUST be overridden via environment variable in production.
 """
 

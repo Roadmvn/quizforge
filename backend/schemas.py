@@ -12,7 +12,7 @@ Design decisions:
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 # ---- Auth ----------------------------------------------------------------
@@ -81,6 +81,12 @@ class QuestionCreate(BaseModel):
         if v is not None and not v.startswith('/api/uploads/'):
             raise ValueError('image_url must start with /api/uploads/')
         return v
+
+    @model_validator(mode='after')
+    def check_at_least_one_correct(self):
+        if not any(a.is_correct for a in self.answers):
+            raise ValueError('At least one answer must be correct')
+        return self
 
 
 class QuestionRead(BaseModel):

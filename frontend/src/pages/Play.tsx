@@ -95,7 +95,7 @@ export default function Play() {
     }
   }, []);
 
-  const { send, connected } = useWebSocket({
+  const { send, connected, failed } = useWebSocket({
     sessionId: sid || '',
     role: 'participant',
     pid,
@@ -115,21 +115,48 @@ export default function Play() {
 
   const answerColors = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500'];
 
+  if (!pid || !ptoken) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <p className="text-red-400 text-lg">Session invalide</p>
+          <p className="text-slate-400">Veuillez rejoindre une session via un code.</p>
+          <a href="/join" className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition">
+            Rejoindre un quiz
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
       {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+      <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
         <span className="font-semibold">{nickname}</span>
         <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4">
+        {/* FAILED */}
+        {failed && (
+          <div className="text-center space-y-4">
+            <p className="text-red-400 text-lg">Connexion perdue. Rechargez la page.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition"
+            >
+              Recharger
+            </button>
+          </div>
+        )}
+
         {/* WAITING */}
-        {phase === 'waiting' && (
+        {!failed && phase === 'waiting' && (
           <div className="text-center space-y-4">
             <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <h2 className="text-2xl font-bold">En attente de l'hôte...</h2>
-            <p className="text-gray-400">La partie va bientôt commencer</p>
+            <p className="text-slate-400">La partie va bientôt commencer</p>
           </div>
         )}
 
@@ -137,7 +164,7 @@ export default function Play() {
         {phase === 'question' && question && (
           <div className="w-full max-w-lg space-y-6">
             <div className="text-center">
-              <span className="text-gray-400 text-sm">
+              <span className="text-slate-400 text-sm">
                 Question {question.question_idx + 1} / {question.total_questions}
               </span>
               <h2 className="text-xl font-bold mt-2 mb-4">{question.text}</h2>
@@ -153,7 +180,7 @@ export default function Play() {
                 <button
                   key={a.id}
                   onClick={() => submitAnswer(a.id)}
-                  className={`p-6 rounded-xl text-lg font-bold transition active:scale-95 ${answerColors[i] || 'bg-gray-700'} hover:opacity-90`}
+                  className={`p-6 rounded-xl text-lg font-bold transition active:scale-95 ${answerColors[i] || 'bg-slate-700'} hover:opacity-90`}
                 >
                   {a.text}
                 </button>
@@ -167,7 +194,7 @@ export default function Play() {
           <div className="text-center space-y-4">
             <div className="text-6xl">⏳</div>
             <h2 className="text-xl font-bold">Réponse envoyée !</h2>
-            <p className="text-gray-400">En attente de la révélation...</p>
+            <p className="text-slate-400">En attente de la révélation...</p>
           </div>
         )}
 
@@ -196,7 +223,7 @@ export default function Play() {
                       ? 'bg-green-500/30 ring-2 ring-green-400'
                       : a.id === selectedAnswer
                         ? 'bg-red-500/30 ring-2 ring-red-400'
-                        : 'bg-gray-800 opacity-50'
+                        : 'bg-slate-800 opacity-50'
                   }`}
                 >
                   {a.text}
@@ -205,12 +232,12 @@ export default function Play() {
               ))}
             </div>
             {myRank && (
-              <div className="text-center bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <p className="text-gray-400">Votre classement</p>
+              <div className="text-center bg-slate-900 rounded-xl p-4 border border-slate-800">
+                <p className="text-slate-400">Votre classement</p>
                 <p className="text-3xl font-bold text-indigo-400">
                   {myRank.rank === 1 ? '\uD83E\uDD47' : myRank.rank === 2 ? '\uD83E\uDD48' : myRank.rank === 3 ? '\uD83E\uDD49' : `#${myRank.rank}`}
                 </p>
-                <p className="text-gray-400">{myRank.score} pts</p>
+                <p className="text-slate-400">{myRank.score} pts</p>
               </div>
             )}
           </div>
@@ -221,11 +248,11 @@ export default function Play() {
           <div className="w-full max-w-md space-y-6 text-center">
             <h2 className="text-3xl font-bold">{'\uD83C\uDFC1'} Partie terminée !</h2>
             {myRank && (
-              <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+              <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                 <p className="text-5xl mb-2">
                   {myRank.rank === 1 ? '\uD83C\uDFC6' : myRank.rank === 2 ? '\uD83E\uDD48' : myRank.rank === 3 ? '\uD83E\uDD49' : '\uD83C\uDFAE'}
                 </p>
-                <p className="text-gray-400">Vous terminez</p>
+                <p className="text-slate-400">Vous terminez</p>
                 <p className={`text-5xl font-bold ${myRank.rank === 1 ? 'text-yellow-400' : 'text-indigo-400'}`}>
                   #{myRank.rank}
                 </p>
@@ -237,7 +264,7 @@ export default function Play() {
                 <div
                   key={e.participant_id}
                   className={`flex items-center justify-between rounded-lg px-4 py-2 ${
-                    e.participant_id === pid ? 'bg-indigo-500/20 border border-indigo-500/40' : 'bg-gray-900'
+                    e.participant_id === pid ? 'bg-indigo-500/20 border border-indigo-500/40' : 'bg-slate-900'
                   }`}
                 >
                   <div className="flex items-center gap-3">

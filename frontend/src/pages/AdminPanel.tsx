@@ -7,7 +7,6 @@ export default function AdminPanel() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (!error) return;
@@ -25,10 +24,7 @@ export default function AdminPanel() {
         setUsers(u);
       })
       .catch((e) => setError(e.message))
-      .finally(() => {
-        setLoading(false);
-        setTimeout(() => setVisible(true), 50);
-      });
+      .finally(() => setLoading(false));
   }, []);
 
   const toggleRole = async (userId: string, currentRole: string) => {
@@ -104,7 +100,7 @@ export default function AdminPanel() {
   };
 
   return (
-    <div className={`space-y-8 transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}>
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Administration</h1>
       </div>
@@ -197,6 +193,7 @@ export default function AdminPanel() {
                         onClick={() => toggleRole(u.id, u.role)}
                         className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
                         title={u.role === 'admin' ? 'Passer user' : 'Passer admin'}
+                        aria-label={u.role === 'admin' ? 'Passer user' : 'Passer admin'}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
@@ -206,6 +203,7 @@ export default function AdminPanel() {
                         onClick={() => deleteUser(u.id)}
                         className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
                         title="Supprimer"
+                        aria-label="Supprimer"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />

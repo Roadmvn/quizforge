@@ -11,7 +11,7 @@ from services.auth import get_current_user
 
 router = APIRouter(prefix="/api", tags=["uploads"])
 
-UPLOAD_DIR = Path("/app/data/uploads")
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "/app/data/uploads"))
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
 EXTENSION_MEDIA_TYPES = {
     "jpg": "image/jpeg",

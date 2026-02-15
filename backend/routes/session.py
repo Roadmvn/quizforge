@@ -463,13 +463,13 @@ def get_session_by_code(code: str, db: DBSession = Depends(get_db)):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     quiz = db.query(Quiz).filter(Quiz.id == session.quiz_id).first()
+    participant_count = db.query(Participant).filter(Participant.session_id == session.id).count()
     return {
-        "session_id": session.id,
         "code": session.code,
         "status": session.status,
         "quiz_title": quiz.title if quiz else "",
         "current_question_idx": session.current_question_idx,
-        "participant_count": len(session.participants),
+        "participant_count": participant_count,
     }
 
 
@@ -840,7 +840,7 @@ async def _handle_participant_message(
             })
 
             # Notify admin of new answer
-            total_participants = len(session.participants)
+            total_participants = db.query(Participant).filter(Participant.session_id == session.id).count()
             answered_count = (
                 db.query(ParticipantResponse)
                 .filter(ParticipantResponse.question_id == question.id)

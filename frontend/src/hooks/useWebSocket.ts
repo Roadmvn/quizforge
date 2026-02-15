@@ -16,6 +16,7 @@ const BASE_DELAY = 1000;
 export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }: UseWebSocketOpts) {
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
+  const [failed, setFailed] = useState(false);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
   const reconnectAttempts = useRef(0);
@@ -56,6 +57,8 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
         const delay = BASE_DELAY * Math.pow(2, reconnectAttempts.current);
         reconnectAttempts.current++;
         reconnectTimer.current = setTimeout(connect, delay);
+      } else {
+        setFailed(true);
       }
     };
 
@@ -91,5 +94,5 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
     }
   }, []);
 
-  return { send, connected };
+  return { send, connected, failed };
 }

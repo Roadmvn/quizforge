@@ -41,12 +41,12 @@ export default function Join() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md border border-gray-800">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="bg-slate-900 rounded-2xl shadow-xl p-8 w-full max-w-md border border-slate-800">
         <h1 className="text-3xl font-bold text-center mb-2 text-white">
           <span className="text-indigo-400">Quiz</span>Forge
         </h1>
-        <p className="text-gray-400 text-center mb-8">Rejoindre un quiz en direct</p>
+        <p className="text-slate-400 text-center mb-8">Rejoindre un quiz en direct</p>
 
         <form onSubmit={handleJoin} className="space-y-4">
           <input
@@ -56,7 +56,7 @@ export default function Join() {
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             maxLength={6}
             required
-            className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-lg text-white text-center text-2xl font-mono tracking-widest placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
+            className="w-full px-4 py-4 bg-slate-800 border border-slate-700 rounded-lg text-white text-center text-2xl font-mono tracking-widest placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
           />
           <input
             type="text"
@@ -65,7 +65,7 @@ export default function Join() {
             onChange={(e) => setNickname(e.target.value)}
             maxLength={50}
             required
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
           <button
