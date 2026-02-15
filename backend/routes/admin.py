@@ -46,16 +46,28 @@ def update_user_role(
     user_id: str,
     payload: RoleUpdate,
     db: Session = Depends(get_db),
-    _admin: User = Depends(get_current_admin),
+    admin: User = Depends(get_current_admin),
 ):
     if payload.role not in ("admin", "user"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Role must be 'admin' or 'user'",
         )
+    if user_id == admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change your own role",
+        )
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.role == "admin" and payload.role == "user":
+        admin_count = db.query(func.count(User.id)).filter(User.role == "admin").scalar()
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot demote the last admin",
+            )
     user.role = payload.role
     db.commit()
     db.refresh(user)

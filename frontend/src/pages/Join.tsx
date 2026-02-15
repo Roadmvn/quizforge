@@ -29,7 +29,10 @@ export default function Join() {
       sessionStorage.setItem('pid', res.id);
       sessionStorage.setItem('ptoken', res.token);
       sessionStorage.setItem('nickname', nickname);
-      navigate(`/play/${res.session_id}`);
+      // Pass credentials as URL params so Play.tsx works even when
+      // mobile browsers (in-app, private mode) lose sessionStorage
+      const params = new URLSearchParams({ pid: res.id, ptoken: res.token, nickname });
+      navigate(`/play/${res.session_id}?${params.toString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impossible de rejoindre');
     } finally {

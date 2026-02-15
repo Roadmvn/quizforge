@@ -30,6 +30,9 @@ class Connection:
     nickname: str | None = None
 
 
+MAX_PARTICIPANTS = 100
+
+
 class Hub:
     def __init__(self):
         # session_id -> list of Connection
@@ -50,6 +53,10 @@ class Hub:
         participant_id: str | None = None,
         nickname: str | None = None,
     ) -> Connection:
+        if role == "participant" and self.get_participant_count(session_id) >= MAX_PARTICIPANTS:
+            await ws.send_json({"type": "error", "message": "Session is full"})
+            await ws.close(code=4029)
+            raise ConnectionError("Session full")
         conn = Connection(
             ws=ws, role=role, participant_id=participant_id, nickname=nickname
         )
@@ -62,12 +69,13 @@ class Hub:
             room.remove(conn)
         if not room:
             self._rooms.pop(session_id, None)
+            self._question_sent_at.pop(session_id, None)
 
     async def broadcast(self, session_id: str, message: dict):
         """Send message to everyone in the session."""
         room = self._rooms.get(session_id, [])
         dead: list[Connection] = []
-        for conn in room:
+        for conn in list(room):
             try:
                 await conn.ws.send_json(message)
             except Exception:

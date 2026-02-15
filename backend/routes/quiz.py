@@ -114,6 +114,40 @@ def get_quiz(
     return quiz
 
 
+@router.put("/{quiz_id}", response_model=QuizRead)
+def replace_quiz(
+    quiz_id: str,
+    payload: QuizCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Full replacement: update title/description, delete all questions, recreate from payload."""
+    quiz = _get_quiz_or_404(quiz_id, db)
+    _check_owner(quiz, current_user)
+
+    quiz.title = payload.title
+    quiz.description = payload.description
+
+    quiz.questions.clear()
+
+    for q_data in payload.questions:
+        question = Question(
+            text=q_data.text,
+            image_url=q_data.image_url,
+            order=q_data.order,
+            time_limit=q_data.time_limit,
+        )
+        for a_data in q_data.answers:
+            question.answers.append(
+                Answer(text=a_data.text, is_correct=a_data.is_correct, order=a_data.order)
+            )
+        quiz.questions.append(question)
+
+    db.commit()
+    db.refresh(quiz)
+    return quiz
+
+
 @router.patch("/{quiz_id}", response_model=QuizRead)
 def update_quiz(
     quiz_id: str,

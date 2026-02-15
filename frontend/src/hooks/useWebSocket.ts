@@ -25,6 +25,9 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
 
   const connect = useCallback(() => {
     if (unmountedRef.current) return;
+    // Don't connect if participant credentials are missing
+    if (role === 'participant' && (!pid || !ptoken)) return;
+    if (role === 'admin' && !token) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;

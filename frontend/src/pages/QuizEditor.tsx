@@ -152,14 +152,7 @@ export default function QuizEditor() {
       if (isNew) {
         await api.post('/quizzes/', payload);
       } else {
-        await api.patch(`/quizzes/${id}`, { title, description });
-        const existing = await api.get<Quiz>(`/quizzes/${id}`);
-        for (const q of existing.questions) {
-          await api.delete(`/quizzes/${id}/questions/${q.id}`);
-        }
-        for (const q of payload.questions) {
-          await api.post(`/quizzes/${id}/questions`, q);
-        }
+        await api.put(`/quizzes/${id}`, payload);
       }
       navigate('/dashboard');
     } catch (err) {

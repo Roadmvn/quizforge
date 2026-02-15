@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv("QUIZFORGE_SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("QUIZFORGE_SECRET_KEY environment variable is required")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_HOURS = 24
+ACCESS_TOKEN_EXPIRE_HOURS = 2
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 

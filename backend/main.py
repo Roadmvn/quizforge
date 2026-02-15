@@ -12,11 +12,12 @@ Design decisions:
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine
-from models import Base
+from models import Base, User
+from services.auth import get_current_user
 from routes.admin import router as admin_router
 from routes.auth import router as auth_router
 from routes.quiz import router as quiz_router
@@ -49,8 +50,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(admin_router)
@@ -66,7 +67,7 @@ def health():
 
 
 @app.get("/api/network-info")
-def network_info():
+def network_info(current_user: User = Depends(get_current_user)):
     import socket
     lan_ip = os.environ.get("HOST_LAN_IP")
     if not lan_ip or lan_ip == "127.0.0.1":

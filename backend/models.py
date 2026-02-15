@@ -146,6 +146,9 @@ class Session(Base):
 # ---------------------------------------------------------------------------
 class Participant(Base):
     __tablename__ = "participants"
+    __table_args__ = (
+        UniqueConstraint("session_id", "nickname", name="uq_session_nickname"),
+    )
 
     id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     session_id: str = Column(String(36), ForeignKey("sessions.id"), nullable=False, index=True)

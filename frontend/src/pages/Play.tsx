@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
 import type { WsMessage, LeaderboardEntry } from '../lib/types';
 
@@ -17,9 +17,12 @@ interface QuestionData {
 
 export default function Play() {
   const { sid } = useParams<{ sid: string }>();
-  const pid = sessionStorage.getItem('pid') || '';
-  const ptoken = sessionStorage.getItem('ptoken') || '';
-  const nickname = sessionStorage.getItem('nickname') || '';
+  const [searchParams] = useSearchParams();
+
+  // Read from URL params first (reliable on mobile), fall back to sessionStorage
+  const pid = searchParams.get('pid') || sessionStorage.getItem('pid') || '';
+  const ptoken = searchParams.get('ptoken') || sessionStorage.getItem('ptoken') || '';
+  const nickname = searchParams.get('nickname') || sessionStorage.getItem('nickname') || '';
 
   const [phase, setPhase] = useState<Phase>('waiting');
   const [question, setQuestion] = useState<QuestionData | null>(null);

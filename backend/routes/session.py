@@ -48,6 +48,14 @@ router = APIRouter(tags=["sessions"])
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _sanitize_csv_value(value) -> str:
+    """Prefix dangerous CSV values to prevent formula injection."""
+    s = str(value)
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + s
+    return s
+
+
 def _get_session_or_404(session_id: str, db: DBSession) -> Session:
     session = db.query(Session).filter(Session.id == session_id).first()
     if not session:
@@ -126,7 +134,7 @@ def list_sessions(
 ):
     sessions = (
         db.query(Session)
-        .options(joinedload(Session.quiz))
+        .options(joinedload(Session.quiz), joinedload(Session.participants))
         .filter(Session.owner_id == current_user.id)
         .order_by(Session.created_at.desc())
         .all()
@@ -225,13 +233,13 @@ def export_csv(
     writer.writerow(header)
 
     for rank, p in enumerate(participants, 1):
-        row = [rank, p.nickname, p.score]
+        row = [rank, _sanitize_csv_value(p.nickname), p.score]
         resp_by_qid = {r.question_id: r for r in p.responses}
         for q in questions:
             resp = resp_by_qid.get(q.id)
             if resp:
                 answer_text = resp.answer.text if resp.answer else ""
-                row.extend([answer_text, resp.is_correct, resp.response_time or "", resp.points_awarded])
+                row.extend([_sanitize_csv_value(answer_text), resp.is_correct, resp.response_time or "", resp.points_awarded])
             else:
                 row.extend(["No answer", False, "", 0])
         writer.writerow(row)
@@ -274,19 +282,28 @@ def get_session_analytics(
 
     total_participants = len(participants)
 
+    # Fetch ALL responses for this session's questions in one query (avoid N+1)
+    question_ids = [q.id for q in questions]
+    all_pr = (
+        db.query(ParticipantResponse)
+        .join(Participant)
+        .filter(
+            Participant.session_id == session.id,
+            ParticipantResponse.question_id.in_(question_ids),
+        )
+        .all()
+    )
+    responses_by_qid: dict[str, list] = {qid: [] for qid in question_ids}
+    for r in all_pr:
+        responses_by_qid[r.question_id].append(r)
+
     # Build per-question stats
     questions_stats = []
     all_correct = 0
     all_responses = 0
 
     for q in questions:
-        responses = (
-            db.query(ParticipantResponse)
-            .filter(ParticipantResponse.question_id == q.id)
-            .join(Participant)
-            .filter(Participant.session_id == session.id)
-            .all()
-        )
+        responses = responses_by_qid[q.id]
         total_resp = len(responses)
         correct_resp = sum(1 for r in responses if r.is_correct)
         avg_time = (
@@ -398,7 +415,11 @@ async def join_session(payload: JoinSession, db: DBSession = Depends(get_db)):
         token=participant_token,
     )
     db.add(participant)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Nickname already taken in this session")
     db.refresh(participant)
 
     total_participants = (
@@ -558,14 +579,34 @@ async def ws_session(
                 db_sync.close()
 
         # Message loop
+        _ADMIN_MSG_TYPES = {"start_game", "next_question", "reveal_answer", "end_game"}
+        _PARTICIPANT_MSG_TYPES = {"submit_answer"}
+
         while True:
             raw = await websocket.receive_text()
+
+            if len(raw) > 4096:
+                await websocket.send_text(json.dumps({
+                    "type": "error", "message": "Message too large",
+                }))
+                continue
+
             data = json.loads(raw)
             msg_type = data.get("type")
 
             if role == "admin":
+                if msg_type not in _ADMIN_MSG_TYPES:
+                    await websocket.send_text(json.dumps({
+                        "type": "error", "message": f"Unknown message type: {msg_type}",
+                    }))
+                    continue
                 await _handle_admin_message(session_id, msg_type, data)
             elif role == "participant":
+                if msg_type not in _PARTICIPANT_MSG_TYPES:
+                    await websocket.send_text(json.dumps({
+                        "type": "error", "message": f"Unknown message type: {msg_type}",
+                    }))
+                    continue
                 await _handle_participant_message(session_id, pid, msg_type, data)
 
     except WebSocketDisconnect:
@@ -708,6 +749,12 @@ async def _handle_participant_message(
                 return
 
             answer_id = data.get("answer_id")
+            if not answer_id or not isinstance(answer_id, str):
+                await hub.send_to_one(session_id, participant_id, {
+                    "type": "error",
+                    "message": "answer_id is required and must be a non-empty string",
+                })
+                return
 
             server_elapsed = hub.get_elapsed_since_question(session_id)
             response_time = server_elapsed if server_elapsed is not None else 0
