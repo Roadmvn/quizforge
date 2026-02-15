@@ -14,6 +14,7 @@ interface QuestionStat {
   question_id: string;
   text: string;
   order: number;
+  image_url?: string | null;
   total_responses: number;
   correct_percentage: number;
   avg_response_time: number;
@@ -54,6 +55,7 @@ export default function SessionAnalytics() {
   const navigate = useNavigate();
   const [data, setData] = useState<Analytics | null>(null);
   const [error, setError] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!sid) return;
@@ -177,6 +179,14 @@ export default function SessionAnalytics() {
                     <span>{q.avg_response_time}s moy.</span>
                   </div>
                 </div>
+                {q.image_url && (
+                  <img
+                    src={q.image_url}
+                    alt="Question"
+                    className="max-h-64 w-full object-contain rounded-xl bg-slate-900/50 mt-3 cursor-pointer"
+                    onClick={() => setPreviewImage(q.image_url!)}
+                  />
+                )}
                 <div className="space-y-2">
                   {q.answer_distribution.map((a) => (
                     <div key={a.answer_id} className="flex items-center gap-3">
@@ -201,6 +211,15 @@ export default function SessionAnalytics() {
           </div>
         </section>
       </div>
+
+      {previewImage && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-8 cursor-pointer" onClick={() => setPreviewImage(null)}>
+          <button className="absolute top-4 right-4 w-10 h-10 bg-slate-800/80 hover:bg-slate-700 rounded-full flex items-center justify-center text-white transition" onClick={() => setPreviewImage(null)}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <img src={previewImage} alt="Apercu" className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }

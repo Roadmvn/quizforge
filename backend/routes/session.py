@@ -331,6 +331,7 @@ def get_session_analytics(
             "text": q.text,
             "order": q.order,
             "time_limit": q.time_limit,
+            "image_url": q.image_url,
             "total_responses": total_resp,
             "correct_percentage": round(correct_resp / total_resp * 100, 1) if total_resp > 0 else 0,
             "avg_response_time": round(avg_time, 2),

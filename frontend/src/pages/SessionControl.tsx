@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, authFetch } from '../lib/api';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -8,6 +8,7 @@ export default function SessionControl() {
   const { sid } = useParams<{ sid: string }>();
   const navigate = useNavigate();
   const token = localStorage.getItem('token') || '';
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [session, setSession] = useState<Session | null>(null);
   const [qrData, setQrData] = useState<{ qr_base64: string; join_url: string; code: string } | null>(null);
@@ -21,6 +22,23 @@ export default function SessionControl() {
   const [revealed, setRevealed] = useState(false);
   const [stats, setStats] = useState<{ total_responses: number; correct_count: number } | null>(null);
   const [error, setError] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
 
   useEffect(() => {
     if (!error) return;
@@ -145,15 +163,28 @@ export default function SessionControl() {
   const isLastQuestion = questionIdx >= totalQuestions - 1;
 
   return (
-    <div className="p-6">
+    <div ref={containerRef} className={`p-6 ${isFullscreen ? 'bg-slate-950 min-h-screen overflow-auto' : ''}`}>
       <div className="flex items-center justify-between mb-6">
         <button onClick={() => navigate('/dashboard')} className="text-slate-400 hover:text-slate-100 text-sm transition flex items-center gap-1.5">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           Tableau de bord
         </button>
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
-          <span className="text-sm text-slate-400">{connected ? 'Connecte' : 'Deconnecte'}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+            <span className="text-sm text-slate-400">{connected ? 'Connecte' : 'Deconnecte'}</span>
+          </div>
+          <button
+            onClick={toggleFullscreen}
+            className="p-1.5 text-slate-400 hover:text-slate-100 transition rounded-lg hover:bg-slate-700/50"
+            title={isFullscreen ? 'Quitter le plein ecran' : 'Plein ecran'}
+          >
+            {isFullscreen ? (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9L4 4m0 0v5m0-5h5m6 6l5 5m0 0v-5m0 5h-5m-6 0l-5 5m0 0v-5m0 5h5m6-6l5-5m0 0v5m0-5h-5" /></svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-7 14l-5 5m0 0h4m-4 0v-4m16 4l-5-5m5 5v-4m0 4h-4" /></svg>
+            )}
+          </button>
         </div>
       </div>
 
