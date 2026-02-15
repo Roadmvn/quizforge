@@ -108,6 +108,15 @@ export default function QuizEditor() {
     );
   };
 
+  const moveQuestion = (idx: number, direction: 'up' | 'down') => {
+    setQuestions((qs) => {
+      const newQs = [...qs];
+      const target = direction === 'up' ? idx - 1 : idx + 1;
+      [newQs[idx], newQs[target]] = [newQs[target], newQs[idx]];
+      return newQs.map((q, i) => ({ ...q, order: i }));
+    });
+  };
+
   const addQuestion = () => {
     setQuestions((qs) => [...qs, emptyQuestion(qs.length)]);
   };
@@ -227,6 +236,24 @@ export default function QuizEditor() {
               </div>
 
               <div className="flex items-center gap-3">
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => moveQuestion(qi, 'up')}
+                    disabled={qi === 0}
+                    className="p-1.5 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition disabled:opacity-20 disabled:hover:text-slate-500 disabled:hover:bg-transparent"
+                    title="Monter"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                  </button>
+                  <button
+                    onClick={() => moveQuestion(qi, 'down')}
+                    disabled={qi === questions.length - 1}
+                    className="p-1.5 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition disabled:opacity-20 disabled:hover:text-slate-500 disabled:hover:bg-transparent"
+                    title="Descendre"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                </div>
                 <label className="text-sm text-slate-400 flex items-center gap-1.5">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   <input

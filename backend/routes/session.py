@@ -84,6 +84,7 @@ def _question_payload(question: Question, reveal: bool = False) -> dict:
         "text": question.text,
         "order": question.order,
         "time_limit": question.time_limit,
+        "image_url": question.image_url,
         "answers": answers,
     }
 
@@ -529,6 +530,32 @@ async def ws_session(
             db.close()
 
         await websocket.send_text(json.dumps({"type": "auth_ok"}))
+
+        # Late-joiner sync: if participant connects after game started, send current state
+        if role == "participant":
+            db_sync = _fresh_db()
+            try:
+                sess = db_sync.query(Session).filter(Session.id == session_id).first()
+                if sess and sess.status in ("active", "revealing"):
+                    quiz = db_sync.query(Quiz).options(
+                        joinedload(Quiz.questions).joinedload(Question.answers)
+                    ).filter(Quiz.id == sess.quiz_id).first()
+                    questions = sorted(quiz.questions, key=lambda q: q.order)
+                    await websocket.send_text(json.dumps({
+                        "type": "game_started",
+                        "total_questions": len(questions),
+                    }))
+                    idx = sess.current_question_idx
+                    if 0 <= idx < len(questions):
+                        reveal = sess.status == "revealing"
+                        await websocket.send_text(json.dumps({
+                            "type": "new_question",
+                            "question_idx": idx,
+                            "total_questions": len(questions),
+                            **_question_payload(questions[idx], reveal=reveal),
+                        }))
+            finally:
+                db_sync.close()
 
         # Message loop
         while True:

@@ -67,5 +67,17 @@ def health():
 
 @app.get("/api/network-info")
 def network_info():
-    lan_ip = os.environ.get("HOST_LAN_IP", "127.0.0.1")
+    import socket
+    lan_ip = os.environ.get("HOST_LAN_IP")
+    if not lan_ip or lan_ip == "127.0.0.1":
+        try:
+            lan_ip = socket.gethostbyname("host.docker.internal")
+        except Exception:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))
+                lan_ip = s.getsockname()[0]
+                s.close()
+            except Exception:
+                lan_ip = "127.0.0.1"
     return {"lan_ip": lan_ip}
