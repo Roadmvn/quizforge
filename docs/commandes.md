@@ -123,6 +123,7 @@ print('OK')
 | `ALLOWED_ORIGINS` | Origines CORS (virgule) | `http://localhost:8080` |
 | `REGISTRATION_ENABLED` | Activer l'inscription | `false` |
 | `HOST_LAN_IP` | IP LAN forcee (QR code) | auto-detect |
+| `UPLOAD_DIR` | Repertoire des images uploadees | `/app/data/uploads` |
 
 ## Deploiement VPS
 
