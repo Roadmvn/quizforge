@@ -16,6 +16,7 @@ Review fixes applied:
 - Division-by-zero guard in scoring
 """
 
+import asyncio
 import json
 import logging
 import secrets
@@ -37,7 +38,8 @@ from services.auth import get_current_user, SECRET_KEY, ALGORITHM
 from services.qrcode import generate_qr_base64
 from websocket.hub import hub
 
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 
 logger = logging.getLogger(__name__)
 
@@ -120,11 +122,17 @@ def create_session(
     if not quiz.questions:
         raise HTTPException(status_code=400, detail="Quiz has no questions")
 
-    session = Session(quiz_id=quiz.id, owner_id=current_user.id)
-    db.add(session)
-    db.commit()
-    db.refresh(session)
-    return session
+    for attempt in range(3):
+        session = Session(quiz_id=quiz.id, owner_id=current_user.id)
+        db.add(session)
+        try:
+            db.commit()
+            db.refresh(session)
+            return session
+        except IntegrityError:
+            db.rollback()
+            if attempt == 2:
+                raise HTTPException(status_code=500, detail="Failed to generate unique session code")
 
 
 @router.get("/api/sessions", response_model=list[SessionSummary])
@@ -488,8 +496,12 @@ async def ws_session(
     pid = None
 
     try:
-        # Wait for auth message
-        raw = await websocket.receive_text()
+        # Wait for auth message (with timeout)
+        try:
+            raw = await asyncio.wait_for(websocket.receive_text(), timeout=10)
+        except asyncio.TimeoutError:
+            await websocket.close(code=4008)
+            return
         auth_data = json.loads(raw)
 
         if auth_data.get("type") != "auth":
@@ -513,7 +525,7 @@ async def ws_session(
                 try:
                     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                     user_id = payload.get("sub")
-                except JWTError:
+                except PyJWTError:
                     await websocket.close(code=4001)
                     return
                 if session.owner_id != user_id:
@@ -592,7 +604,13 @@ async def ws_session(
                 }))
                 continue
 
-            data = json.loads(raw)
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({
+                    "type": "error", "message": "Invalid JSON",
+                }))
+                continue
             msg_type = data.get("type")
 
             if role == "admin":

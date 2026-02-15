@@ -79,9 +79,9 @@ if [ "$USE_SSL" = true ]; then
     apt-get install -y -qq certbot
   fi
   echo ">>> Obtention du certificat SSL..."
-  certbot certonly --standalone -d "$DOMAIN" --email "$EMAIL" --agree-tos --non-interactive
+  certbot certonly --webroot -w /var/www/certbot -d "$DOMAIN" --email "$EMAIL" --agree-tos --non-interactive
 
-  CRON_CMD="0 3 * * * certbot renew --quiet --deploy-hook 'cd $APP_DIR && docker compose -f docker-compose.prod.yml restart nginx'"
+  CRON_CMD="0 3 * * * certbot renew --webroot -w /var/www/certbot --quiet --deploy-hook 'cd $APP_DIR && docker compose -f docker-compose.prod.yml restart nginx'"
   (crontab -l 2>/dev/null | grep -v certbot; echo "$CRON_CMD") | crontab -
 else
   # Sans SSL: nginx écoute sur port 80 seulement, retirer port 443 du compose
@@ -104,7 +104,7 @@ docker compose -f docker-compose.prod.yml up -d
 echo ""
 echo "=== QuizForge déployé ==="
 echo "URL: $ORIGIN"
-echo "Secret JWT: $SECRET_KEY"
+echo "Secret JWT: [saved in .env]"
 if [ "$USE_SSL" = true ]; then
   echo "Renouvellement SSL: cron quotidien à 3h"
 fi

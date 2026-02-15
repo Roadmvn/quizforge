@@ -16,7 +16,7 @@ Design decisions:
 import secrets
 import string
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
@@ -53,7 +53,7 @@ class User(Base):
     hashed_password: str = Column(String(255), nullable=False)
     display_name: str = Column(String(100), nullable=False)
     role: str = Column(String(20), default="user", nullable=False)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
+    created_at: datetime = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     quizzes = relationship("Quiz", back_populates="owner", cascade="all, delete-orphan")
 
@@ -68,9 +68,9 @@ class Quiz(Base):
     title: str = Column(String(200), nullable=False)
     description: str = Column(Text, default="")
     owner_id: str = Column(String(36), ForeignKey("users.id"), nullable=False)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
+    created_at: datetime = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     owner = relationship("User", back_populates="quizzes")
@@ -132,7 +132,7 @@ class Session(Base):
     status: str = Column(String(20), nullable=False, default="lobby")
     # status: lobby -> active -> revealing -> finished
     current_question_idx: int = Column(Integer, nullable=False, default=-1)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
+    created_at: datetime = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     quiz = relationship("Quiz")
     owner = relationship("User")
@@ -155,7 +155,7 @@ class Participant(Base):
     nickname: str = Column(String(50), nullable=False)
     token: str = Column(String(64), nullable=False)  # secure token for WS auth
     score: int = Column(Integer, nullable=False, default=0)
-    joined_at: datetime = Column(DateTime, default=datetime.utcnow)
+    joined_at: datetime = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     session = relationship("Session", back_populates="participants")
     responses = relationship(
@@ -179,7 +179,7 @@ class ParticipantResponse(Base):
     is_correct: bool = Column(Boolean, nullable=False, default=False)
     response_time: float = Column(Float, nullable=True)  # seconds
     points_awarded: int = Column(Integer, nullable=False, default=0)
-    answered_at: datetime = Column(DateTime, default=datetime.utcnow)
+    answered_at: datetime = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     participant = relationship("Participant", back_populates="responses")
     question = relationship("Question")

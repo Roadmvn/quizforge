@@ -12,7 +12,7 @@ Design decisions:
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # ---- Auth ----------------------------------------------------------------
@@ -74,6 +74,13 @@ class QuestionCreate(BaseModel):
     order: int = 0
     time_limit: int = Field(default=30, ge=5, le=300)
     answers: list[AnswerCreate] = Field(min_length=2, max_length=6)
+
+    @field_validator('image_url')
+    @classmethod
+    def validate_image_url(cls, v):
+        if v is not None and not v.startswith('/api/uploads/'):
+            raise ValueError('image_url must start with /api/uploads/')
+        return v
 
 
 class QuestionRead(BaseModel):

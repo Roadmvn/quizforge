@@ -2,7 +2,7 @@
 JWT authentication service.
 
 Design decisions:
-- python-jose for JWT: lightweight, well-maintained, supports HS256.
+- PyJWT for JWT: lightweight, well-maintained, supports HS256.
 - HS256 (symmetric): sufficient for a single-service app. Switch to RS256
   if you ever need token verification by a separate service.
 - bcrypt used directly (not via passlib) for password hashing: avoids
@@ -13,12 +13,13 @@ Design decisions:
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import bcrypt
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+from jwt.exceptions import PyJWTError
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -42,7 +43,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(user_id: str) -> str:
-    expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     return jwt.encode({"sub": user_id, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -61,7 +62,7 @@ def get_current_user(
         user_id: str | None = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except JWTError:
+    except PyJWTError:
         raise credentials_exception
 
     user = db.query(User).filter(User.id == user_id).first()

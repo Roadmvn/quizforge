@@ -24,6 +24,12 @@ export default function Play() {
   const ptoken = searchParams.get('ptoken') || sessionStorage.getItem('ptoken') || '';
   const nickname = searchParams.get('nickname') || sessionStorage.getItem('nickname') || '';
 
+  useEffect(() => {
+    if (searchParams.has('ptoken')) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const [phase, setPhase] = useState<Phase>('waiting');
   const [question, setQuestion] = useState<QuestionData | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);

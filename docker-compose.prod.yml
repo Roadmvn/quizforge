@@ -1,6 +1,6 @@
 services:
   backend:
-    image: ghcr.io/roadmvn/quizforge-backend:latest
+    image: ghcr.io/roadmvn/quizforge-backend:${TAG:-latest}
     env_file: .env
     volumes:
       - quizforge-data:/app/data
@@ -17,7 +17,7 @@ services:
       - internal
 
   nginx:
-    image: ghcr.io/roadmvn/quizforge-nginx:latest
+    image: ghcr.io/roadmvn/quizforge-nginx:${TAG:-latest}
     ports:
       - "80:80"
       - "443:443"
