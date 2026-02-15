@@ -17,14 +17,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine
 from models import Base
+from routes.admin import router as admin_router
 from routes.auth import router as auth_router
 from routes.quiz import router as quiz_router
 from routes.session import router as session_router
+from routes.upload import router as upload_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs("data", exist_ok=True)
+    os.makedirs("data/uploads", exist_ok=True)
     Base.metadata.create_all(bind=engine)
     yield
 
@@ -50,9 +53,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(admin_router)
 app.include_router(auth_router)
 app.include_router(quiz_router)
 app.include_router(session_router)
+app.include_router(upload_router)
 
 
 @app.get("/api/health")

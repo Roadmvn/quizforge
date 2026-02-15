@@ -64,7 +64,7 @@ export default function SessionAnalytics() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <div className="p-6 flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-red-400">{error}</p>
           <button onClick={() => navigate('/dashboard')} className="text-indigo-400 hover:underline">
@@ -77,7 +77,7 @@ export default function SessionAnalytics() {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <div className="p-6 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -87,19 +87,19 @@ export default function SessionAnalytics() {
   const maxBarWidth = 100;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-white">
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => navigate('/dashboard')} className="text-slate-400 hover:text-slate-100 text-sm transition">
           &larr; Tableau de bord
         </button>
-        <span className="text-sm text-gray-400">Session {session.code}</span>
-      </header>
+        <span className="text-sm text-slate-400">Session {session.code}</span>
+      </div>
 
-      <main className="max-w-5xl mx-auto p-6 space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold">{session.quiz_title}</h1>
-          <p className="text-gray-400">
+          <p className="text-slate-400">
             {session.total_participants} participant{session.total_participants > 1 && 's'} &middot;{' '}
             {session.total_questions} question{session.total_questions > 1 && 's'} &middot;{' '}
             {new Date(session.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -109,7 +109,7 @@ export default function SessionAnalytics() {
         {/* Global stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard label="Score moyen" value={`${global_stats.avg_score}`} sub="pts" />
-          <StatCard label="Taux de réussite" value={`${global_stats.success_rate}%`} color={global_stats.success_rate >= 50 ? 'text-green-400' : 'text-red-400'} />
+          <StatCard label="Taux de reussite" value={`${global_stats.success_rate}%`} color={global_stats.success_rate >= 50 ? 'text-green-400' : 'text-red-400'} />
           <StatCard
             label="Plus facile"
             value={global_stats.easiest_question ? `${global_stats.easiest_question.correct_percentage}%` : '-'}
@@ -127,29 +127,29 @@ export default function SessionAnalytics() {
         {/* Leaderboard */}
         <section>
           <h2 className="text-lg font-semibold mb-4">Classement</h2>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-800 text-gray-400">
+                <tr className="border-b border-slate-700 text-slate-400">
                   <th className="text-left px-4 py-3">#</th>
                   <th className="text-left px-4 py-3">Joueur</th>
                   <th className="text-right px-4 py-3">Score</th>
-                  <th className="text-right px-4 py-3 hidden sm:table-cell">Bonnes rép.</th>
+                  <th className="text-right px-4 py-3 hidden sm:table-cell">Bonnes rep.</th>
                   <th className="text-right px-4 py-3 hidden sm:table-cell">Temps moy.</th>
                 </tr>
               </thead>
               <tbody>
                 {leaderboard.map((p) => (
-                  <tr key={p.rank} className="border-b border-gray-800/50 last:border-b-0 hover:bg-gray-800/30">
+                  <tr key={p.rank} className="border-b border-slate-700/50 last:border-b-0 hover:bg-slate-700/30">
                     <td className="px-4 py-3 text-lg">
                       {p.rank === 1 ? '\uD83E\uDD47' : p.rank === 2 ? '\uD83E\uDD48' : p.rank === 3 ? '\uD83E\uDD49' : p.rank}
                     </td>
                     <td className="px-4 py-3 font-medium">{p.nickname}</td>
                     <td className="px-4 py-3 text-right font-mono text-indigo-400">{p.score} pts</td>
-                    <td className="px-4 py-3 text-right hidden sm:table-cell text-gray-400">
+                    <td className="px-4 py-3 text-right hidden sm:table-cell text-slate-400">
                       {p.correct_answers}/{p.total_answers}
                     </td>
-                    <td className="px-4 py-3 text-right hidden sm:table-cell text-gray-400">
+                    <td className="px-4 py-3 text-right hidden sm:table-cell text-slate-400">
                       {p.avg_response_time}s
                     </td>
                   </tr>
@@ -161,16 +161,16 @@ export default function SessionAnalytics() {
 
         {/* Per-question breakdown */}
         <section>
-          <h2 className="text-lg font-semibold mb-4">Détail par question</h2>
+          <h2 className="text-lg font-semibold mb-4">Detail par question</h2>
           <div className="space-y-4">
             {questions.map((q, i) => (
-              <div key={q.question_id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <div key={q.question_id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-medium">
                     <span className="text-indigo-400 mr-2">Q{i + 1}.</span>
                     {q.text}
                   </h3>
-                  <div className="flex items-center gap-4 text-sm text-gray-400 shrink-0 ml-4">
+                  <div className="flex items-center gap-4 text-sm text-slate-400 shrink-0 ml-4">
                     <span className={q.correct_percentage >= 50 ? 'text-green-400' : 'text-red-400'}>
                       {q.correct_percentage}% correct
                     </span>
@@ -182,15 +182,15 @@ export default function SessionAnalytics() {
                     <div key={a.answer_id} className="flex items-center gap-3">
                       <div className="w-1/3 text-sm truncate flex items-center gap-2">
                         {a.is_correct && <span className="text-green-400">{'\u2713'}</span>}
-                        <span className={a.is_correct ? 'text-green-300' : 'text-gray-300'}>{a.text}</span>
+                        <span className={a.is_correct ? 'text-green-300' : 'text-slate-300'}>{a.text}</span>
                       </div>
-                      <div className="flex-1 bg-gray-800 rounded-full h-5 overflow-hidden">
+                      <div className="flex-1 bg-slate-700 rounded-full h-5 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${a.is_correct ? 'bg-green-500/60' : 'bg-red-500/40'}`}
                           style={{ width: `${Math.max(a.percentage, 0)}%`, maxWidth: `${maxBarWidth}%` }}
                         />
                       </div>
-                      <span className="text-sm text-gray-400 w-16 text-right">
+                      <span className="text-sm text-slate-400 w-16 text-right">
                         {a.count} ({a.percentage}%)
                       </span>
                     </div>
@@ -200,17 +200,17 @@ export default function SessionAnalytics() {
             ))}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }
 
 function StatCard({ label, value, sub, color = 'text-indigo-400' }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-      <p className="text-gray-400 text-xs mb-1">{label}</p>
+    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center">
+      <p className="text-slate-400 text-xs mb-1">{label}</p>
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      {sub && <p className="text-gray-500 text-xs mt-1 truncate">{sub}</p>}
+      {sub && <p className="text-slate-500 text-xs mt-1 truncate">{sub}</p>}
     </div>
   );
 }

@@ -52,6 +52,7 @@ class User(Base):
     email: str = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password: str = Column(String(255), nullable=False)
     display_name: str = Column(String(100), nullable=False)
+    role: str = Column(String(20), default="user", nullable=False)
     created_at: datetime = Column(DateTime, default=datetime.utcnow)
 
     quizzes = relationship("Quiz", back_populates="owner", cascade="all, delete-orphan")
@@ -90,6 +91,7 @@ class Question(Base):
     id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     quiz_id: str = Column(String(36), ForeignKey("quizzes.id"), nullable=False, index=True)
     text: str = Column(Text, nullable=False)
+    image_url: str | None = Column(String, nullable=True)
     order: int = Column(Integer, nullable=False, default=0)
     time_limit: int = Column(Integer, nullable=False, default=30)  # seconds
 

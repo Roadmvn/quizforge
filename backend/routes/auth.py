@@ -11,6 +11,7 @@ Design decisions:
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -39,10 +40,12 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
             detail="Email already registered",
         )
 
+    is_first_user = db.query(func.count(User.id)).scalar() == 0
     user = User(
         email=payload.email,
         hashed_password=hash_password(payload.password),
         display_name=payload.display_name,
+        role="admin" if is_first_user else "user",
     )
     db.add(user)
     db.commit()

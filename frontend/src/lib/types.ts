@@ -2,6 +2,21 @@ export interface User {
   id: string;
   email: string;
   display_name: string;
+  role: string;
+  created_at: string;
+}
+
+export interface AdminStats {
+  total_users: number;
+  total_quizzes: number;
+  total_sessions: number;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  display_name: string;
+  role: string;
   created_at: string;
 }
 
@@ -23,6 +38,7 @@ export interface Question {
   text: string;
   order: number;
   time_limit: number;
+  image_url?: string | null;
   answers: Answer[];
 }
 
@@ -30,6 +46,7 @@ export interface QuestionCreate {
   text: string;
   order: number;
   time_limit: number;
+  image_url?: string | null;
   answers: AnswerCreate[];
 }
 

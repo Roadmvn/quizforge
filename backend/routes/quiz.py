@@ -87,6 +87,7 @@ def create_quiz(
     for q_data in payload.questions:
         question = Question(
             text=q_data.text,
+            image_url=q_data.image_url,
             order=q_data.order,
             time_limit=q_data.time_limit,
         )
@@ -160,6 +161,7 @@ def add_question(
     question = Question(
         quiz_id=quiz.id,
         text=payload.text,
+        image_url=payload.image_url,
         order=payload.order,
         time_limit=payload.time_limit,
     )

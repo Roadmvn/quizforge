@@ -9,6 +9,7 @@ interface QuestionData {
   question_id: string;
   text: string;
   time_limit: number;
+  image_url?: string | null;
   answers: { id: string; text: string; order: number; is_correct?: boolean }[];
   question_idx: number;
   total_questions: number;
@@ -131,6 +132,9 @@ export default function Play() {
                 Question {question.question_idx + 1} / {question.total_questions}
               </span>
               <h2 className="text-xl font-bold mt-2 mb-4">{question.text}</h2>
+              {question.image_url && (
+                <img src={question.image_url} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-slate-900/50 mx-auto mb-4" />
+              )}
               <div className={`text-4xl font-bold font-mono ${timeLeft <= 5 ? 'text-red-400' : 'text-indigo-400'}`}>
                 {timeLeft}
               </div>
@@ -171,6 +175,9 @@ export default function Play() {
               </div>
             )}
             <h2 className="text-xl font-bold text-center">{question.text}</h2>
+            {question.image_url && (
+              <img src={question.image_url} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-slate-900/50 mx-auto" />
+            )}
             <div className="grid grid-cols-2 gap-3">
               {question.answers.map((a) => (
                 <div

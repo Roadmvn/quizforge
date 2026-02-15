@@ -39,6 +39,7 @@ class UserRead(BaseModel):
     id: str
     email: str
     display_name: str
+    role: str
     created_at: datetime
 
 
@@ -69,6 +70,7 @@ class AnswerUpdate(BaseModel):
 
 class QuestionCreate(BaseModel):
     text: str = Field(min_length=1)
+    image_url: str | None = None
     order: int = 0
     time_limit: int = Field(default=30, ge=5, le=300)
     answers: list[AnswerCreate] = Field(min_length=2, max_length=6)
@@ -79,6 +81,7 @@ class QuestionRead(BaseModel):
 
     id: str
     text: str
+    image_url: str | None = None
     order: int
     time_limit: int
     answers: list[AnswerRead]
@@ -86,6 +89,7 @@ class QuestionRead(BaseModel):
 
 class QuestionUpdate(BaseModel):
     text: str | None = None
+    image_url: str | None = None
     order: int | None = None
     time_limit: int | None = Field(default=None, ge=5, le=300)
 

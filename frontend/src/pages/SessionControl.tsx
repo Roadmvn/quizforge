@@ -28,7 +28,6 @@ export default function SessionControl() {
     return () => clearTimeout(t);
   }, [error]);
 
-  // Polling: refresh session every 5s while in lobby
   useEffect(() => {
     if (gameStatus !== 'lobby' || !sid) return;
     const interval = setInterval(() => {
@@ -118,7 +117,7 @@ export default function SessionControl() {
   const downloadCsv = async () => {
     try {
       const res = await authFetch(`/sessions/${sid}/export`);
-      if (!res.ok) throw new Error('Échec du téléchargement');
+      if (!res.ok) throw new Error('Echec du telechargement');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -127,70 +126,96 @@ export default function SessionControl() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError('Impossible de télécharger le CSV');
+      setError('Impossible de telecharger le CSV');
     }
   };
 
-  if (!session) return <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">Chargement...</div>;
+  if (!session) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[60vh]">
+        <div className="flex items-center gap-3 text-slate-400">
+          <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          Chargement...
+        </div>
+      </div>
+    );
+  }
 
   const totalParticipants = session.participants.length;
   const isLastQuestion = questionIdx >= totalQuestions - 1;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-white">
-          &larr; Tableau de bord
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => navigate('/dashboard')} className="text-slate-400 hover:text-slate-100 text-sm transition flex items-center gap-1.5">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          Tableau de bord
         </button>
-        <div className="flex items-center gap-3">
-          <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
-          <span className="text-sm text-gray-400">{connected ? 'Connecté' : 'Déconnecté'}</span>
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+          <span className="text-sm text-slate-400">{connected ? 'Connecte' : 'Deconnecte'}</span>
         </div>
-      </header>
+      </div>
 
       {error && (
-        <div className="bg-red-500/10 border-b border-red-500/30 px-6 py-3 text-red-400 text-sm flex items-center justify-between">
+        <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center justify-between">
           <span>{error}</span>
-          <button onClick={() => setError('')} className="text-red-400 hover:text-red-300 ml-4">X</button>
+          <button onClick={() => setError('')} className="text-red-400 hover:text-red-300 ml-4">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
       )}
 
-      <main className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto">
         {/* LOBBY */}
         {gameStatus === 'lobby' && (
           <div className="text-center space-y-8">
-            <h2 className="text-2xl font-bold">Salle d'attente</h2>
+            <h2 className="text-2xl font-bold text-white">Salle d'attente</h2>
+
             {qrData && (
-              <div className="inline-block bg-white p-4 rounded-2xl">
-                <img src={qrData.qr_base64} alt="QR Code" className="w-64 h-64" />
+              <div className="inline-block">
+                <div className="bg-white p-5 rounded-2xl shadow-2xl shadow-indigo-500/10">
+                  <img src={qrData.qr_base64} alt="QR Code" className="w-64 h-64" />
+                </div>
               </div>
             )}
+
             <div>
-              <p className="text-gray-400 mb-2">Code d'accès :</p>
-              <p className="text-5xl font-mono font-bold text-indigo-400 tracking-widest">
+              <p className="text-slate-400 text-sm mb-2">Code d'acces</p>
+              <p className="text-5xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 tracking-widest">
                 {session.code}
               </p>
-              {qrData && <p className="text-gray-500 text-sm mt-2">{qrData.join_url}</p>}
+              {qrData && <p className="text-slate-500 text-xs mt-2">{qrData.join_url}</p>}
             </div>
-            <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-              <p className="text-gray-400 mb-2">
-                {totalParticipants} joueur{totalParticipants > 1 && 's'} inscrit{totalParticipants > 1 && 's'}
-                ({onlineCount} en ligne)
-              </p>
-              <p className="text-gray-500 text-xs mb-4">500 à 1000 pts par bonne réponse (bonus rapidité)</p>
+
+            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+                  <p className="text-3xl font-bold text-white">{totalParticipants}</p>
+                  <p className="text-xs text-slate-500 mt-1">Joueur{totalParticipants > 1 && 's'} inscrit{totalParticipants > 1 && 's'}</p>
+                </div>
+                <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+                  <p className="text-3xl font-bold text-emerald-400">{onlineCount}</p>
+                  <p className="text-xs text-slate-500 mt-1">En ligne</p>
+                </div>
+              </div>
+
+              <p className="text-slate-500 text-xs mb-4">500 a 1000 pts par bonne reponse (bonus rapidite)</p>
+
               <div className="flex flex-wrap gap-2 justify-center mb-6">
                 {session.participants.map((p) => (
-                  <span key={p.id} className="px-3 py-1 bg-gray-800 rounded-full text-sm">
+                  <span key={p.id} className="px-3 py-1.5 bg-slate-700/50 border border-slate-600/50 rounded-full text-sm text-slate-300">
                     {p.nickname}
                   </span>
                 ))}
               </div>
+
               <button
                 onClick={startGame}
                 disabled={totalParticipants === 0}
-                className="px-8 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold text-lg transition disabled:opacity-50"
+                className="px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 rounded-xl font-semibold text-lg transition-all duration-300 disabled:opacity-50 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30"
               >
-                Démarrer la partie
+                Demarrer la partie
               </button>
             </div>
           </div>
@@ -200,29 +225,39 @@ export default function SessionControl() {
         {(gameStatus === 'active' || gameStatus === 'revealing') && currentQuestion && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">
-                Question {questionIdx + 1} / {totalQuestions}
-              </span>
-              <span className="text-gray-400">
-                {answeredCount} / {totalParticipants} ont répondu
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="bg-indigo-500/20 text-indigo-400 text-sm font-medium rounded-full px-3 py-1">
+                  Question {questionIdx + 1} / {totalQuestions}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                {answeredCount} / {totalParticipants} ont repondu
+              </div>
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-              <h2 className="text-2xl font-bold mb-6">{currentQuestion.text as string}</h2>
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center">
+              <h2 className="text-2xl font-bold text-white mb-6">{currentQuestion.text as string}</h2>
+              {!!currentQuestion.image_url && (
+                <img src={currentQuestion.image_url as string} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-slate-900/50 mx-auto mb-6" />
+              )}
               <div className="grid grid-cols-2 gap-4">
                 {(currentQuestion.answers as Array<{ id: string; text: string; is_correct?: boolean; order: number }>).map(
                   (a, i) => {
-                    const ansColors = ['bg-red-500/30', 'bg-blue-500/30', 'bg-yellow-500/30', 'bg-green-500/30'];
+                    const ansColors = ['bg-red-500/20 border-red-500/30', 'bg-blue-500/20 border-blue-500/30', 'bg-yellow-500/20 border-yellow-500/30', 'bg-green-500/20 border-green-500/30'];
                     return (
                       <div
                         key={a.id}
-                        className={`p-4 rounded-xl text-lg font-medium ${ansColors[i] || 'bg-gray-800'} ${
-                          revealed && a.is_correct ? 'ring-4 ring-green-400' : ''
+                        className={`p-4 rounded-xl text-lg font-medium border transition-all duration-300 ${ansColors[i] || 'bg-slate-800 border-slate-700'} ${
+                          revealed && a.is_correct ? 'ring-4 ring-green-400/50 border-green-400 shadow-lg shadow-green-500/20' : ''
                         }`}
                       >
                         {a.text}
-                        {revealed && a.is_correct && <span className="ml-2">{'\u2713'}</span>}
+                        {revealed && a.is_correct && (
+                          <span className="ml-2 inline-flex items-center">
+                            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                          </span>
+                        )}
                       </div>
                     );
                   }
@@ -231,20 +266,39 @@ export default function SessionControl() {
             </div>
 
             {revealed && stats && (
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <p className="text-center text-gray-400 mb-4">
-                  {stats.correct_count} / {stats.total_responses} correct{stats.correct_count > 1 && 's'}
-                </p>
+              <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+                <div className="flex items-center justify-center gap-4 mb-6">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2 text-center">
+                    <p className="text-2xl font-bold text-emerald-400">{stats.correct_count}</p>
+                    <p className="text-xs text-slate-500">Correct{stats.correct_count > 1 && 's'}</p>
+                  </div>
+                  <div className="text-slate-600">/</div>
+                  <div className="bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-2 text-center">
+                    <p className="text-2xl font-bold text-slate-300">{stats.total_responses}</p>
+                    <p className="text-xs text-slate-500">Reponses</p>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  {leaderboard.slice(0, 5).map((e) => (
-                    <div key={e.participant_id} className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-2">
+                  {leaderboard.slice(0, 5).map((e, i) => (
+                    <div key={e.participant_id} className={`flex items-center justify-between rounded-xl px-4 py-3 transition ${
+                      i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
+                      i === 1 ? 'bg-slate-400/5 border border-slate-500/20' :
+                      i === 2 ? 'bg-amber-600/5 border border-amber-600/20' :
+                      'bg-slate-700/30 border border-slate-700/50'
+                    }`}>
                       <div className="flex items-center gap-3">
-                        <span className="text-lg">
-                          {e.rank === 1 ? '\uD83E\uDD47' : e.rank === 2 ? '\uD83E\uDD48' : e.rank === 3 ? '\uD83E\uDD49' : `${e.rank}.`}
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                          i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                          i === 1 ? 'bg-slate-400/20 text-slate-300' :
+                          i === 2 ? 'bg-amber-600/20 text-amber-400' :
+                          'bg-slate-700 text-slate-400'
+                        }`}>
+                          {e.rank}
                         </span>
-                        <span>{e.nickname}</span>
+                        <span className="font-medium text-slate-200">{e.nickname}</span>
                       </div>
-                      <span className="font-mono text-indigo-400">{e.score} pts</span>
+                      <span className="font-mono text-indigo-400 font-medium">{e.score} pts</span>
                     </div>
                   ))}
                 </div>
@@ -255,23 +309,24 @@ export default function SessionControl() {
               {!revealed ? (
                 <button
                   onClick={revealAnswer}
-                  className="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-xl font-semibold transition"
+                  className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-yellow-600/20"
                 >
-                  Révéler la réponse
+                  Reveler la reponse
                 </button>
               ) : isLastQuestion ? (
                 <button
                   onClick={endGame}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-xl font-semibold transition"
+                  className="px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-red-600/20"
                 >
                   Terminer la partie
                 </button>
               ) : (
                 <button
                   onClick={nextQuestion}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold transition"
+                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-indigo-600/20 flex items-center gap-2"
                 >
-                  Question suivante &rarr;
+                  Question suivante
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
               )}
             </div>
@@ -281,46 +336,64 @@ export default function SessionControl() {
         {/* FINISHED */}
         {gameStatus === 'finished' && (
           <div className="space-y-6 text-center">
-            <h2 className="text-3xl font-bold">{'\uD83C\uDFC1'} Partie terminée !</h2>
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <h3 className="text-xl font-semibold mb-4">Classement final</h3>
-              <div className="space-y-2 max-w-md mx-auto">
-                {leaderboard.map((e) => (
-                  <div key={e.participant_id} className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-2">Partie terminee !</h2>
+              <p className="text-slate-400">Voici le classement final</p>
+            </div>
+
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+              <h3 className="text-xl font-semibold text-white mb-6">Classement final</h3>
+              <div className="space-y-2 max-w-lg mx-auto">
+                {leaderboard.map((e, i) => (
+                  <div key={e.participant_id} className={`flex items-center justify-between rounded-xl px-5 py-3.5 transition ${
+                    i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
+                    i === 1 ? 'bg-slate-400/5 border border-slate-500/20' :
+                    i === 2 ? 'bg-amber-600/5 border border-amber-600/20' :
+                    'bg-slate-700/30 border border-slate-700/50'
+                  }`}>
                     <div className="flex items-center gap-3">
-                      <span className="text-xl">
-                        {e.rank === 1 ? '\uD83E\uDD47' : e.rank === 2 ? '\uD83E\uDD48' : e.rank === 3 ? '\uD83E\uDD49' : `${e.rank}.`}
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                        i === 1 ? 'bg-slate-400/20 text-slate-300' :
+                        i === 2 ? 'bg-amber-600/20 text-amber-400' :
+                        'bg-slate-700 text-slate-400'
+                      }`}>
+                        {e.rank}
                       </span>
-                      <span className="font-medium">{e.nickname}</span>
+                      <span className="font-medium text-white">{e.nickname}</span>
                     </div>
-                    <span className="font-mono text-indigo-400 text-lg">{e.score} pts</span>
+                    <span className="font-mono text-indigo-400 text-lg font-medium">{e.score} pts</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex gap-4 justify-center">
+
+            <div className="flex gap-4 justify-center flex-wrap">
               <button
                 onClick={() => navigate(`/session/${sid}/analytics`)}
-                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold transition"
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-indigo-600/20 flex items-center gap-2"
               >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                 Analytique
               </button>
               <button
                 onClick={downloadCsv}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold transition"
+                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-emerald-600/20 flex items-center gap-2"
               >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 Exporter CSV
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-semibold transition"
+                className="px-6 py-3 bg-slate-700/50 hover:bg-slate-700 border border-slate-600/50 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2"
               >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 Retour au tableau de bord
               </button>
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
