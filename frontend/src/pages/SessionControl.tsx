@@ -163,8 +163,8 @@ export default function SessionControl() {
   const isLastQuestion = questionIdx >= totalQuestions - 1;
 
   return (
-    <div ref={containerRef} className={`p-6 ${isFullscreen ? 'bg-slate-950 min-h-screen overflow-auto' : ''}`}>
-      <div className="flex items-center justify-between mb-6">
+    <div ref={containerRef} className={`${isFullscreen ? 'bg-slate-950 min-h-screen flex flex-col overflow-auto' : 'p-6'}`}>
+      <div className={`flex items-center justify-between ${isFullscreen ? 'px-6 py-3 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10' : 'mb-6'}`}>
         <button onClick={() => navigate('/dashboard')} className="text-slate-400 hover:text-slate-100 text-sm transition flex items-center gap-1.5">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           Tableau de bord
@@ -189,7 +189,7 @@ export default function SessionControl() {
       </div>
 
       {error && (
-        <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center justify-between">
+        <div className={`mb-6 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center justify-between ${isFullscreen ? 'mx-6' : ''}`}>
           <span>{error}</span>
           <button onClick={() => setError('')} className="text-red-400 hover:text-red-300 ml-4">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -197,11 +197,11 @@ export default function SessionControl() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto">
+      <div className={isFullscreen ? 'max-w-7xl mx-auto flex-1 flex flex-col px-6 pb-6' : 'max-w-4xl mx-auto'}>
         {/* LOBBY */}
         {gameStatus === 'lobby' && (
-          <div className="text-center space-y-8">
-            <h2 className="text-2xl font-bold text-white">Salle d'attente</h2>
+          <div className={`text-center space-y-8 ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center' : ''}`}>
+            <h2 className={`${isFullscreen ? 'text-3xl md:text-4xl' : 'text-2xl'} font-bold text-white`}>Salle d'attente</h2>
 
             {qrData && (
               <div className="inline-block">
@@ -254,39 +254,39 @@ export default function SessionControl() {
 
         {/* ACTIVE / REVEALING */}
         {(gameStatus === 'active' || gameStatus === 'revealing') && currentQuestion && (
-          <div className="space-y-6">
+          <div className={`space-y-6 ${isFullscreen ? 'flex-1 flex flex-col' : ''}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="bg-indigo-500/20 text-indigo-400 text-sm font-medium rounded-full px-3 py-1">
+                <span className={`bg-indigo-500/20 text-indigo-400 font-medium rounded-full px-3 py-1 ${isFullscreen ? 'text-base' : 'text-sm'}`}>
                   Question {questionIdx + 1} / {totalQuestions}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-400">
+              <div className={`flex items-center gap-2 text-slate-400 ${isFullscreen ? 'text-base' : 'text-sm'}`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 {answeredCount} / {totalParticipants} ont repondu
               </div>
             </div>
 
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center">
-              <h2 className="text-2xl font-bold text-white mb-6">{currentQuestion.text as string}</h2>
+            <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center p-10 max-w-5xl w-full mx-auto' : 'p-8'}`}>
+              <h2 className={`${isFullscreen ? 'text-3xl md:text-4xl' : 'text-2xl'} font-bold text-white mb-6`}>{currentQuestion.text as string}</h2>
               {!!currentQuestion.image_url && (
-                <img src={currentQuestion.image_url as string} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-slate-900/50 mx-auto mb-6" />
+                <img src={currentQuestion.image_url as string} alt="Question" className={`${isFullscreen ? 'max-h-[50vh]' : 'max-h-80'} w-full object-contain rounded-xl bg-slate-900/50 mx-auto mb-6`} />
               )}
-              <div className="grid grid-cols-2 gap-4">
+              <div className={`grid grid-cols-2 gap-4 ${isFullscreen ? 'w-full' : ''}`}>
                 {(currentQuestion.answers as Array<{ id: string; text: string; is_correct?: boolean; order: number }>).map(
                   (a, i) => {
                     const ansColors = ['bg-red-500/20 border-red-500/30', 'bg-blue-500/20 border-blue-500/30', 'bg-yellow-500/20 border-yellow-500/30', 'bg-green-500/20 border-green-500/30'];
                     return (
                       <div
                         key={a.id}
-                        className={`p-4 rounded-xl text-lg font-medium border transition-all duration-300 ${ansColors[i] || 'bg-slate-800 border-slate-700'} ${
+                        className={`${isFullscreen ? 'p-6 text-xl' : 'p-4 text-lg'} rounded-xl font-medium border transition-all duration-300 ${ansColors[i] || 'bg-slate-800 border-slate-700'} ${
                           revealed && a.is_correct ? 'ring-4 ring-green-400/50 border-green-400 shadow-lg shadow-green-500/20' : ''
                         }`}
                       >
                         {a.text}
                         {revealed && a.is_correct && (
                           <span className="ml-2 inline-flex items-center">
-                            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                            <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-green-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                           </span>
                         )}
                       </div>
@@ -297,29 +297,29 @@ export default function SessionControl() {
             </div>
 
             {revealed && stats && (
-              <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                <div className="flex items-center justify-center gap-4 mb-6">
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2 text-center">
-                    <p className="text-2xl font-bold text-emerald-400">{stats.correct_count}</p>
-                    <p className="text-xs text-slate-500">Correct{stats.correct_count > 1 && 's'}</p>
+              <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-8 max-w-5xl w-full mx-auto' : 'p-6'}`}>
+                <div className={`flex items-center justify-center gap-4 ${isFullscreen ? 'mb-8' : 'mb-6'}`}>
+                  <div className={`bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center ${isFullscreen ? 'px-6 py-3' : 'px-4 py-2'}`}>
+                    <p className={`${isFullscreen ? 'text-3xl' : 'text-2xl'} font-bold text-emerald-400`}>{stats.correct_count}</p>
+                    <p className={`${isFullscreen ? 'text-sm' : 'text-xs'} text-slate-500`}>Correct{stats.correct_count > 1 && 's'}</p>
                   </div>
                   <div className="text-slate-600">/</div>
-                  <div className="bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-2 text-center">
-                    <p className="text-2xl font-bold text-slate-300">{stats.total_responses}</p>
-                    <p className="text-xs text-slate-500">Reponses</p>
+                  <div className={`bg-slate-700/50 border border-slate-600/50 rounded-xl text-center ${isFullscreen ? 'px-6 py-3' : 'px-4 py-2'}`}>
+                    <p className={`${isFullscreen ? 'text-3xl' : 'text-2xl'} font-bold text-slate-300`}>{stats.total_responses}</p>
+                    <p className={`${isFullscreen ? 'text-sm' : 'text-xs'} text-slate-500`}>Reponses</p>
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className={`space-y-2 ${isFullscreen ? 'space-y-3' : ''}`}>
                   {leaderboard.slice(0, 5).map((e, i) => (
-                    <div key={e.participant_id} className={`flex items-center justify-between rounded-xl px-4 py-3 transition ${
+                    <div key={e.participant_id} className={`flex items-center justify-between rounded-xl transition ${isFullscreen ? 'px-6 py-4' : 'px-4 py-3'} ${
                       i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
                       i === 1 ? 'bg-slate-400/5 border border-slate-500/20' :
                       i === 2 ? 'bg-amber-600/5 border border-amber-600/20' :
                       'bg-slate-700/30 border border-slate-700/50'
                     }`}>
                       <div className="flex items-center gap-3">
-                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                        <span className={`${isFullscreen ? 'w-9 h-9 text-sm' : 'w-7 h-7 text-xs'} rounded-full flex items-center justify-center font-bold ${
                           i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
                           i === 1 ? 'bg-slate-400/20 text-slate-300' :
                           i === 2 ? 'bg-amber-600/20 text-amber-400' :
@@ -327,34 +327,34 @@ export default function SessionControl() {
                         }`}>
                           {e.rank}
                         </span>
-                        <span className="font-medium text-slate-200">{e.nickname}</span>
+                        <span className={`font-medium text-slate-200 ${isFullscreen ? 'text-lg' : ''}`}>{e.nickname}</span>
                       </div>
-                      <span className="font-mono text-indigo-400 font-medium">{e.score} pts</span>
+                      <span className={`font-mono text-indigo-400 font-medium ${isFullscreen ? 'text-lg' : ''}`}>{e.score} pts</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <div className="flex gap-4 justify-center">
+            <div className={`flex gap-4 justify-center ${isFullscreen ? 'pt-4 pb-2' : ''}`}>
               {!revealed ? (
                 <button
                   onClick={revealAnswer}
-                  className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-yellow-600/20"
+                  className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-yellow-600/20`}
                 >
                   Reveler la reponse
                 </button>
               ) : isLastQuestion ? (
                 <button
                   onClick={endGame}
-                  className="px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-red-600/20"
+                  className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-red-600/20`}
                 >
                   Terminer la partie
                 </button>
               ) : (
                 <button
                   onClick={nextQuestion}
-                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+                  className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-indigo-600/20 flex items-center gap-2`}
                 >
                   Question suivante
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -366,24 +366,24 @@ export default function SessionControl() {
 
         {/* FINISHED */}
         {gameStatus === 'finished' && (
-          <div className="space-y-6 text-center">
+          <div className={`space-y-6 text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center' : ''}`}>
             <div>
-              <h2 className="text-3xl font-bold text-white mb-2">Partie terminee !</h2>
-              <p className="text-slate-400">Voici le classement final</p>
+              <h2 className={`${isFullscreen ? 'text-4xl md:text-5xl' : 'text-3xl'} font-bold text-white mb-2`}>Partie terminee !</h2>
+              <p className={`text-slate-400 ${isFullscreen ? 'text-lg' : ''}`}>Voici le classement final</p>
             </div>
 
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-              <h3 className="text-xl font-semibold text-white mb-6">Classement final</h3>
-              <div className="space-y-2 max-w-lg mx-auto">
+            <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-8 max-w-5xl w-full' : 'p-6'}`}>
+              <h3 className={`${isFullscreen ? 'text-2xl mb-8' : 'text-xl mb-6'} font-semibold text-white`}>Classement final</h3>
+              <div className={`space-y-2 ${isFullscreen ? 'max-w-3xl mx-auto space-y-3' : 'max-w-lg mx-auto'}`}>
                 {leaderboard.map((e, i) => (
-                  <div key={e.participant_id} className={`flex items-center justify-between rounded-xl px-5 py-3.5 transition ${
+                  <div key={e.participant_id} className={`flex items-center justify-between rounded-xl transition ${isFullscreen ? 'px-6 py-4' : 'px-5 py-3.5'} ${
                     i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
                     i === 1 ? 'bg-slate-400/5 border border-slate-500/20' :
                     i === 2 ? 'bg-amber-600/5 border border-amber-600/20' :
                     'bg-slate-700/30 border border-slate-700/50'
                   }`}>
                     <div className="flex items-center gap-3">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      <span className={`${isFullscreen ? 'w-10 h-10 text-base' : 'w-8 h-8 text-sm'} rounded-full flex items-center justify-center font-bold ${
                         i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
                         i === 1 ? 'bg-slate-400/20 text-slate-300' :
                         i === 2 ? 'bg-amber-600/20 text-amber-400' :
@@ -391,9 +391,9 @@ export default function SessionControl() {
                       }`}>
                         {e.rank}
                       </span>
-                      <span className="font-medium text-white">{e.nickname}</span>
+                      <span className={`font-medium text-white ${isFullscreen ? 'text-lg' : ''}`}>{e.nickname}</span>
                     </div>
-                    <span className="font-mono text-indigo-400 text-lg font-medium">{e.score} pts</span>
+                    <span className={`font-mono text-indigo-400 font-medium ${isFullscreen ? 'text-xl' : 'text-lg'}`}>{e.score} pts</span>
                   </div>
                 ))}
               </div>

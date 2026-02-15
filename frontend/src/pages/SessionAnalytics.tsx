@@ -183,7 +183,7 @@ export default function SessionAnalytics() {
                   <img
                     src={q.image_url}
                     alt="Question"
-                    className="max-h-64 w-full object-contain rounded-xl bg-slate-900/50 mt-3 cursor-pointer"
+                    className="mx-auto max-h-48 object-contain rounded-xl bg-slate-900/50 mt-3 mb-4 cursor-pointer"
                     onClick={() => setPreviewImage(q.image_url!)}
                   />
                 )}
