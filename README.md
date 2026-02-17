@@ -49,18 +49,20 @@ open http://localhost:8080
 | `HOST_LAN_IP` | IP LAN forcee (QR code) | auto-detect |
 | `UPLOAD_DIR` | Repertoire des images uploadees | `/app/data/uploads` |
 
-## Déploiement production (VPS)
+## Deploiement production (VPS)
+
+Voir le guide complet : [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+
+En resume :
 
 ```bash
-# Sur un VPS Ubuntu avec un domaine pointé vers l'IP
+# Deploiement automatique (interactif)
 curl -fsSL https://raw.githubusercontent.com/Roadmvn/quizforge/main/deploy/setup.sh | sudo bash
 ```
 
-Le script installe Docker, Certbot, obtient un certificat SSL et lance l'app.
+Le CI/CD (GitHub Actions) build et deploie automatiquement a chaque push sur `main`.
 
-Chaque push sur `main` declenche automatiquement : tests → build des images Docker → deploy sur le VPS via GitHub Actions.
-
-Pour plus de commandes (LAN, migrations, reset DB, etc.), voir [`docs/commandes.md`](docs/commandes.md).
+Pour les commandes utiles (LAN, migrations, reset DB, etc.), voir [`docs/commandes.md`](docs/commandes.md).
 
 ## Structure du projet
 
@@ -90,6 +92,7 @@ quizforge/
 │       └── lib/          # API client, types TypeScript
 ├── deploy/               # Script d'init VPS (setup.sh)
 ├── docs/                 # Documentation
+│   ├── DEPLOYMENT.md     # Guide de deploiement production
 │   └── commandes.md      # Commandes utiles (local, VPS, migration)
 ├── .github/workflows/    # CI/CD (test → build → deploy)
 ├── docker-compose.yml    # Dev local
