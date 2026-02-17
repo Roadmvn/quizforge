@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [expandedQuiz, setExpandedQuiz] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,7 +24,8 @@ export default function Dashboard() {
     ]).then(([q, s]) => {
       setQuizzes(q);
       setSessions(s);
-    }).catch((e) => setError(e.message));
+    }).catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
   }, []);
 
   const deleteQuiz = async (id: string) => {
@@ -78,6 +80,14 @@ export default function Dashboard() {
       year: 'numeric',
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -196,10 +206,10 @@ export default function Dashboard() {
                     {qSessions.map((s) => (
                       <div
                         key={s.id}
-                        className="px-5 py-3 flex items-center justify-between hover:bg-slate-800/50 transition border-b border-slate-800/50 last:border-b-0"
+                        className="px-5 py-3 hover:bg-slate-800/50 transition border-b border-slate-800/50 last:border-b-0 space-y-2"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="font-mono text-indigo-400 text-sm">{s.code}</span>
+                          <span className="font-mono text-indigo-400 text-sm font-semibold">{s.code}</span>
                           <span className="text-slate-400 text-sm">
                             {s.participant_count} joueur{s.participant_count > 1 && 's'}
                           </span>
@@ -219,8 +229,7 @@ export default function Dashboard() {
                           {(s.status === 'lobby' || s.status === 'active' || s.status === 'revealing') && (
                             <button
                               onClick={() => forceFinishSession(s.id)}
-                              className="px-3 py-1 text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition"
-                              title="Terminer la session"
+                              className="px-3 py-1.5 text-xs font-medium bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition whitespace-nowrap"
                             >
                               Terminer
                             </button>
@@ -228,24 +237,24 @@ export default function Dashboard() {
                           {s.status === 'finished' && (
                             <button
                               onClick={() => navigate(`/session/${s.id}/analytics`)}
-                              className="px-3 py-1 text-xs bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg transition"
+                              className="px-3 py-1.5 text-xs font-medium bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg transition whitespace-nowrap"
                             >
-                              Analytique
+                              Analytiques
                             </button>
                           )}
                           <button
                             onClick={() => navigate(`/session/${s.id}`)}
-                            className="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded-lg transition"
+                            className="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 rounded-lg transition whitespace-nowrap"
                           >
                             {s.status === 'lobby' ? 'Rejoindre' : s.status === 'finished' ? 'Voir' : 'Gerer'}
                           </button>
                           <button
                             onClick={() => deleteSession(s.id)}
-                            className="p-1 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition"
+                            className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition ml-auto"
                             title="Supprimer la session"
                             aria-label="Supprimer la session"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         </div>
                       </div>

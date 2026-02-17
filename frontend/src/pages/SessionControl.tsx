@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import { api, authFetch } from '../lib/api';
 import { useWebSocket } from '../hooks/useWebSocket';
 import type { Session, LeaderboardEntry, WsMessage } from '../lib/types';
@@ -21,6 +22,7 @@ export default function SessionControl() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [stats, setStats] = useState<{ total_responses: number; correct_count: number } | null>(null);
+  const [playerResults, setPlayerResults] = useState<Array<{participant_id: string; nickname: string; is_correct: boolean; answer_id: string | null; points_awarded: number}>>([]);
   const [error, setError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -45,6 +47,18 @@ export default function SessionControl() {
     const t = setTimeout(() => setError(''), 5000);
     return () => clearTimeout(t);
   }, [error]);
+
+  useEffect(() => {
+    if (gameStatus !== 'finished') return;
+    const duration = 3000;
+    const end = Date.now() + duration;
+    const frame = () => {
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.6 } });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+    frame();
+  }, [gameStatus]);
 
   useEffect(() => {
     if (gameStatus !== 'lobby' || !sid) return;
@@ -102,6 +116,7 @@ export default function SessionControl() {
         setAnsweredCount(0);
         setRevealed(false);
         setStats(null);
+        setPlayerResults([]);
         setGameStatus('active');
         break;
       case 'answer_received':
@@ -111,6 +126,7 @@ export default function SessionControl() {
         setRevealed(true);
         setStats(msg.stats as { total_responses: number; correct_count: number });
         setLeaderboard(msg.leaderboard as LeaderboardEntry[]);
+        setPlayerResults(msg.player_results as Array<{participant_id: string; nickname: string; is_correct: boolean; answer_id: string | null; points_awarded: number}> || []);
         setGameStatus('revealing');
         break;
       case 'game_ended':
@@ -307,18 +323,72 @@ export default function SessionControl() {
 
             {revealed && stats && (
               <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-8 max-w-5xl w-full mx-auto' : 'p-6'}`}>
-                <div className={`flex items-center justify-center gap-4 ${isFullscreen ? 'mb-8' : 'mb-6'}`}>
-                  <div className={`bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center ${isFullscreen ? 'px-6 py-3' : 'px-4 py-2'}`}>
-                    <p className={`${isFullscreen ? 'text-3xl' : 'text-2xl'} font-bold text-emerald-400`}>{stats.correct_count}</p>
-                    <p className={`${isFullscreen ? 'text-sm' : 'text-xs'} text-slate-500`}>Correct{stats.correct_count > 1 && 's'}</p>
-                  </div>
-                  <div className="text-slate-600">/</div>
-                  <div className={`bg-slate-700/50 border border-slate-600/50 rounded-xl text-center ${isFullscreen ? 'px-6 py-3' : 'px-4 py-2'}`}>
-                    <p className={`${isFullscreen ? 'text-3xl' : 'text-2xl'} font-bold text-slate-300`}>{stats.total_responses}</p>
-                    <p className={`${isFullscreen ? 'text-sm' : 'text-xs'} text-slate-500`}>Reponses</p>
-                  </div>
-                </div>
+                {/* Résultats par joueur - section principale */}
+                {playerResults.length > 0 && (
+                  <div className={isFullscreen ? 'mb-8' : 'mb-6'}>
+                    <div className={`flex items-center justify-between ${isFullscreen ? 'mb-6' : 'mb-4'}`}>
+                      <h3 className={`${isFullscreen ? 'text-xl' : 'text-base'} font-bold text-white`}>Qui a bon ?</h3>
+                      <div className="flex items-center gap-3">
+                        <div className={`flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg ${isFullscreen ? 'px-4 py-2' : 'px-3 py-1.5'}`}>
+                          <svg className={`${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} text-emerald-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                          <span className={`${isFullscreen ? 'text-lg' : 'text-sm'} font-bold text-emerald-400`}>{stats.correct_count}</span>
+                        </div>
+                        <div className={`flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-lg ${isFullscreen ? 'px-4 py-2' : 'px-3 py-1.5'}`}>
+                          <svg className={`${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} text-red-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                          <span className={`${isFullscreen ? 'text-lg' : 'text-sm'} font-bold text-red-400`}>{stats.total_responses - stats.correct_count}</span>
+                        </div>
+                      </div>
+                    </div>
 
+                    {/* Correct players */}
+                    {playerResults.filter(pr => pr.is_correct).length > 0 && (
+                      <div className={isFullscreen ? 'mb-4' : 'mb-3'}>
+                        <div className={`grid grid-cols-2 sm:grid-cols-3 ${isFullscreen ? 'md:grid-cols-4 gap-3' : 'md:grid-cols-4 gap-2'}`}>
+                          {playerResults.filter(pr => pr.is_correct).map((pr) => (
+                            <div
+                              key={pr.participant_id}
+                              className={`flex items-center gap-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                            >
+                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-emerald-400 shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                              <span className="font-semibold text-emerald-200 truncate">{pr.nickname}</span>
+                              {pr.points_awarded > 0 && (
+                                <span className={`ml-auto text-emerald-400 font-mono font-bold shrink-0 ${isFullscreen ? 'text-base' : 'text-xs'}`}>+{pr.points_awarded}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Wrong players */}
+                    {playerResults.filter(pr => !pr.is_correct).length > 0 && (
+                      <div>
+                        <div className={`grid grid-cols-2 sm:grid-cols-3 ${isFullscreen ? 'md:grid-cols-4 gap-3' : 'md:grid-cols-4 gap-2'}`}>
+                          {playerResults.filter(pr => !pr.is_correct && pr.answer_id).map((pr) => (
+                            <div
+                              key={pr.participant_id}
+                              className={`flex items-center gap-2.5 rounded-xl bg-red-500/10 border border-red-500/25 transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                            >
+                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-red-400 shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                              <span className="font-medium text-red-300 truncate">{pr.nickname}</span>
+                            </div>
+                          ))}
+                          {playerResults.filter(pr => !pr.is_correct && !pr.answer_id).map((pr) => (
+                            <div
+                              key={pr.participant_id}
+                              className={`flex items-center gap-2.5 rounded-xl bg-slate-700/30 border border-slate-600/30 transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                            >
+                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-slate-500 shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              <span className="font-medium text-slate-500 truncate">{pr.nickname}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Leaderboard top 5 */}
                 <div className={`space-y-2 ${isFullscreen ? 'space-y-3' : ''}`}>
                   {leaderboard.slice(0, 5).map((e, i) => (
                     <div key={e.participant_id} className={`flex items-center justify-between rounded-xl transition ${isFullscreen ? 'px-6 py-4' : 'px-4 py-3'} ${
@@ -380,40 +450,72 @@ export default function SessionControl() {
           </div>
         )}
 
-        {/* FINISHED */}
+        {/* FINISHED - Podium */}
         {gameStatus === 'finished' && (
-          <div className={`space-y-6 text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center' : ''}`}>
+          <div className={`space-y-8 text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center' : ''}`}>
             <div>
               <h2 className={`${isFullscreen ? 'text-4xl md:text-5xl' : 'text-3xl'} font-bold text-white mb-2`}>Partie terminee !</h2>
-              <p className={`text-slate-400 ${isFullscreen ? 'text-lg' : ''}`}>Voici le classement final</p>
+              <p className={`text-slate-400 ${isFullscreen ? 'text-lg' : ''}`}>Voici le podium final</p>
             </div>
 
-            <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-8 max-w-5xl w-full' : 'p-6'}`}>
-              <h3 className={`${isFullscreen ? 'text-2xl mb-8' : 'text-xl mb-6'} font-semibold text-white`}>Classement final</h3>
-              <div className={`space-y-2 ${isFullscreen ? 'max-w-3xl mx-auto space-y-3' : 'max-w-lg mx-auto'}`}>
-                {leaderboard.map((e, i) => (
-                  <div key={e.participant_id} className={`flex items-center justify-between rounded-xl transition ${isFullscreen ? 'px-6 py-4' : 'px-5 py-3.5'} ${
-                    i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
-                    i === 1 ? 'bg-slate-400/5 border border-slate-500/20' :
-                    i === 2 ? 'bg-amber-600/5 border border-amber-600/20' :
-                    'bg-slate-700/30 border border-slate-700/50'
-                  }`}>
-                    <div className="flex items-center gap-3">
-                      <span className={`${isFullscreen ? 'w-10 h-10 text-base' : 'w-8 h-8 text-sm'} rounded-full flex items-center justify-center font-bold ${
-                        i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                        i === 1 ? 'bg-slate-400/20 text-slate-300' :
-                        i === 2 ? 'bg-amber-600/20 text-amber-400' :
-                        'bg-slate-700 text-slate-400'
-                      }`}>
-                        {e.rank}
-                      </span>
-                      <span className={`font-medium text-white ${isFullscreen ? 'text-lg' : ''}`}>{e.nickname}</span>
+            {/* Podium visuel */}
+            {leaderboard.length >= 1 && (
+              <div className={`flex items-end justify-center gap-3 ${isFullscreen ? 'gap-4 mt-8' : 'mt-6'}`}>
+                {/* 2eme place */}
+                {leaderboard.length >= 2 && (
+                  <div className="flex flex-col items-center animate-[slideUp_0.8s_ease-out_0.3s_both]">
+                    <div className={`${isFullscreen ? 'text-5xl mb-3' : 'text-4xl mb-2'}`}>&#x1F948;</div>
+                    <p className={`font-bold text-slate-200 ${isFullscreen ? 'text-xl mb-2' : 'text-lg mb-1'}`}>{leaderboard[1].nickname}</p>
+                    <p className={`font-mono text-indigo-400 ${isFullscreen ? 'text-lg mb-3' : 'mb-2'}`}>{leaderboard[1].score} pts</p>
+                    <div className={`${isFullscreen ? 'w-36 h-36' : 'w-28 h-28'} bg-gradient-to-t from-slate-600 to-slate-400 rounded-t-xl flex items-center justify-center shadow-lg shadow-slate-500/20`}>
+                      <span className={`${isFullscreen ? 'text-5xl' : 'text-4xl'} font-black text-white/80`}>2</span>
                     </div>
-                    <span className={`font-mono text-indigo-400 font-medium ${isFullscreen ? 'text-xl' : 'text-lg'}`}>{e.score} pts</span>
                   </div>
-                ))}
+                )}
+
+                {/* 1ere place */}
+                <div className="flex flex-col items-center animate-[slideUp_0.8s_ease-out_both]">
+                  <div className={`${isFullscreen ? 'text-6xl mb-3' : 'text-5xl mb-2'}`}>&#x1F947;</div>
+                  <p className={`font-bold text-yellow-300 ${isFullscreen ? 'text-2xl mb-2' : 'text-xl mb-1'}`}>{leaderboard[0].nickname}</p>
+                  <p className={`font-mono text-yellow-400 ${isFullscreen ? 'text-xl mb-3' : 'text-lg mb-2'}`}>{leaderboard[0].score} pts</p>
+                  <div className={`${isFullscreen ? 'w-40 h-48' : 'w-32 h-40'} bg-gradient-to-t from-yellow-600 to-yellow-400 rounded-t-xl flex items-center justify-center shadow-lg shadow-yellow-500/30`}>
+                    <span className={`${isFullscreen ? 'text-6xl' : 'text-5xl'} font-black text-white/80`}>1</span>
+                  </div>
+                </div>
+
+                {/* 3eme place */}
+                {leaderboard.length >= 3 && (
+                  <div className="flex flex-col items-center animate-[slideUp_0.8s_ease-out_0.6s_both]">
+                    <div className={`${isFullscreen ? 'text-5xl mb-3' : 'text-4xl mb-2'}`}>&#x1F949;</div>
+                    <p className={`font-bold text-slate-200 ${isFullscreen ? 'text-xl mb-2' : 'text-lg mb-1'}`}>{leaderboard[2].nickname}</p>
+                    <p className={`font-mono text-indigo-400 ${isFullscreen ? 'text-lg mb-3' : 'mb-2'}`}>{leaderboard[2].score} pts</p>
+                    <div className={`${isFullscreen ? 'w-36 h-28' : 'w-28 h-20'} bg-gradient-to-t from-amber-700 to-amber-500 rounded-t-xl flex items-center justify-center shadow-lg shadow-amber-600/20`}>
+                      <span className={`${isFullscreen ? 'text-5xl' : 'text-4xl'} font-black text-white/80`}>3</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
+
+            {/* Classement complet (4eme et au-dela) */}
+            {leaderboard.length > 3 && (
+              <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-6 max-w-3xl w-full' : 'p-4 max-w-lg'} mx-auto`}>
+                <h3 className={`${isFullscreen ? 'text-lg mb-4' : 'text-sm mb-3'} font-semibold text-slate-400`}>Classement complet</h3>
+                <div className={`space-y-2 ${isFullscreen ? 'space-y-3' : ''}`}>
+                  {leaderboard.slice(3).map((e) => (
+                    <div key={e.participant_id} className={`flex items-center justify-between rounded-xl bg-slate-700/30 border border-slate-700/50 ${isFullscreen ? 'px-6 py-3' : 'px-4 py-2'}`}>
+                      <div className="flex items-center gap-3">
+                        <span className={`${isFullscreen ? 'w-8 h-8 text-sm' : 'w-7 h-7 text-xs'} rounded-full bg-slate-700 text-slate-400 flex items-center justify-center font-bold`}>
+                          {e.rank}
+                        </span>
+                        <span className={`font-medium text-slate-200 ${isFullscreen ? 'text-base' : 'text-sm'}`}>{e.nickname}</span>
+                      </div>
+                      <span className={`font-mono text-indigo-400 ${isFullscreen ? 'text-base' : 'text-sm'}`}>{e.score} pts</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-4 justify-center flex-wrap">
               <button

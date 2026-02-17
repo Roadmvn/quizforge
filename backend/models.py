@@ -53,6 +53,7 @@ class User(Base):
     hashed_password: str = Column(String(255), nullable=False)
     display_name: str = Column(String(100), nullable=False)
     role: str = Column(String(20), default="user", nullable=False)
+    is_active: bool = Column(Boolean, default=True)
     created_at: datetime = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     quizzes = relationship("Quiz", back_populates="owner", cascade="all, delete-orphan")

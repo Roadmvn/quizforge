@@ -29,10 +29,9 @@ export default function Join() {
       sessionStorage.setItem('pid', res.id);
       sessionStorage.setItem('ptoken', res.token);
       sessionStorage.setItem('nickname', nickname);
-      // Pass credentials as URL params so Play.tsx works even when
-      // mobile browsers (in-app, private mode) lose sessionStorage
-      const params = new URLSearchParams({ pid: res.id, ptoken: res.token, nickname });
-      navigate(`/play/${res.session_id}?${params.toString()}`);
+      navigate(`/play/${res.session_id}`, {
+        state: { pid: res.id, ptoken: res.token, nickname },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impossible de rejoindre');
     } finally {
@@ -56,6 +55,7 @@ export default function Join() {
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             maxLength={6}
             required
+            aria-label="Code de la session"
             className="w-full px-4 py-4 bg-slate-800 border border-slate-700 rounded-lg text-white text-center text-2xl font-mono tracking-widest placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
           />
           <input
@@ -65,13 +65,14 @@ export default function Join() {
             onChange={(e) => setNickname(e.target.value)}
             maxLength={50}
             required
+            aria-label="Votre pseudo"
             className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
           <button
             type="submit"
             disabled={loading || code.length < 6}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-lg transition disabled:opacity-50"
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Connexion...' : 'Rejoindre'}
           </button>

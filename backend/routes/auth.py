@@ -34,7 +34,10 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Registration is disabled",
         )
-    if db.query(User).filter(User.email == payload.email).first():
+    email = payload.email.strip()
+    password = payload.password.strip()
+    display_name = payload.display_name.strip()
+    if db.query(User).filter(User.email == email).first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
@@ -42,9 +45,9 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
 
     is_first_user = db.query(func.count(User.id)).scalar() == 0
     user = User(
-        email=payload.email,
-        hashed_password=hash_password(payload.password),
-        display_name=payload.display_name,
+        email=email,
+        hashed_password=hash_password(password),
+        display_name=display_name,
         role="admin" if is_first_user else "user",
     )
     db.add(user)
@@ -55,14 +58,21 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(payload: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
+    email = payload.email.strip()
+    password = payload.password.strip()
+    user = db.query(User).filter(User.email == email).first()
     # Always verify against something to prevent timing-based email enumeration
     dummy_hash = "$2b$12$LJ3m4ys3Lg3Dlw.YBOSKiuIllNNkmMYMUn5mGEB./FDD0rQOkSO.a"
-    password_valid = verify_password(payload.password, user.hashed_password if user else dummy_hash)
+    password_valid = verify_password(password, user.hashed_password if user else dummy_hash)
     if not user or not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is suspended",
         )
     return Token(access_token=create_access_token(user.id))
 

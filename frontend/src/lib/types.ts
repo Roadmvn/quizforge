@@ -6,17 +6,42 @@ export interface User {
   created_at: string;
 }
 
-export interface AdminStats {
-  total_users: number;
-  total_quizzes: number;
-  total_sessions: number;
-}
-
 export interface AdminUser {
   id: string;
   email: string;
   display_name: string;
   role: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface AdminDashboard {
+  total_users: number;
+  total_quizzes: number;
+  total_sessions: number;
+  active_sessions: number;
+  recent_users: AdminUser[];
+  recent_sessions: AdminSessionItem[];
+}
+
+export interface AdminQuizItem {
+  id: string;
+  title: string;
+  description: string;
+  owner_email: string;
+  owner_name: string;
+  question_count: number;
+  session_count: number;
+  created_at: string;
+}
+
+export interface AdminSessionItem {
+  id: string;
+  code: string;
+  status: string;
+  quiz_title: string;
+  owner_name: string;
+  participant_count: number;
   created_at: string;
 }
 

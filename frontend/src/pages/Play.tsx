@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
 import type { WsMessage, LeaderboardEntry } from '../lib/types';
 
@@ -17,18 +17,11 @@ interface QuestionData {
 
 export default function Play() {
   const { sid } = useParams<{ sid: string }>();
-  const [searchParams] = useSearchParams();
-
-  // Read from URL params first (reliable on mobile), fall back to sessionStorage
-  const pid = searchParams.get('pid') || sessionStorage.getItem('pid') || '';
-  const ptoken = searchParams.get('ptoken') || sessionStorage.getItem('ptoken') || '';
-  const nickname = searchParams.get('nickname') || sessionStorage.getItem('nickname') || '';
-
-  useEffect(() => {
-    if (searchParams.has('ptoken')) {
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, []);
+  const location = useLocation();
+  const state = location.state as { pid?: string; ptoken?: string; nickname?: string } | null;
+  const pid = state?.pid || sessionStorage.getItem('pid') || '';
+  const ptoken = state?.ptoken || sessionStorage.getItem('ptoken') || '';
+  const nickname = state?.nickname || sessionStorage.getItem('nickname') || '';
 
   const [phase, setPhase] = useState<Phase>('waiting');
   const [question, setQuestion] = useState<QuestionData | null>(null);
@@ -134,7 +127,7 @@ export default function Play() {
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
         <span className="font-semibold">{nickname}</span>
-        <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
+        <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} aria-label="Indicateur de connexion" />
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4">
@@ -277,6 +270,12 @@ export default function Play() {
                 </div>
               ))}
             </div>
+            <a
+              href="/join"
+              className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition mt-4"
+            >
+              Rejoindre un autre quiz
+            </a>
           </div>
         )}
       </main>

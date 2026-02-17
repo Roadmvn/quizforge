@@ -40,6 +40,7 @@ class UserRead(BaseModel):
     email: str
     display_name: str
     role: str
+    is_active: bool
     created_at: datetime
 
 
@@ -186,7 +187,7 @@ class SessionSummary(BaseModel):
 
 class JoinSession(BaseModel):
     code: str = Field(min_length=6, max_length=6)
-    nickname: str = Field(min_length=1, max_length=50)
+    nickname: str = Field(min_length=1, max_length=50, pattern=r'^[\w\s\-\.]+$')
 
 
 class SubmitAnswer(BaseModel):
@@ -218,3 +219,45 @@ class AdminUserCreate(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     display_name: str = Field(min_length=1, max_length=100)
     role: str = Field(default="user", pattern="^(admin|user)$")
+
+
+class PasswordReset(BaseModel):
+    password: str = Field(min_length=8, max_length=128)
+
+
+class StatusUpdate(BaseModel):
+    is_active: bool
+
+
+class AdminQuizRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    title: str
+    description: str
+    owner_email: str
+    owner_name: str
+    question_count: int
+    session_count: int
+    created_at: datetime
+
+
+class AdminSessionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    code: str
+    status: str
+    quiz_title: str
+    owner_name: str
+    participant_count: int
+    created_at: datetime
+
+
+class AdminDashboard(BaseModel):
+    total_users: int
+    total_quizzes: int
+    total_sessions: int
+    active_sessions: int
+    recent_users: list[UserRead]
+    recent_sessions: list[AdminSessionRead]

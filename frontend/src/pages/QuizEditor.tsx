@@ -26,6 +26,7 @@ export default function QuizEditor() {
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState<QuestionCreate[]>([emptyQuestion(0)]);
   const [saving, setSaving] = useState(false);
+  const [loadingQuiz, setLoadingQuiz] = useState(!isNew);
   const [error, setError] = useState('');
   const fileInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -62,9 +63,18 @@ export default function QuizEditor() {
             })),
           }))
         );
-      });
+      }).finally(() => setLoadingQuiz(false));
     }
   }, [id, isNew]);
+
+  useEffect(() => {
+    const hasContent = title.trim() || questions.some(q => q.text.trim());
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasContent) e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [title, questions]);
 
   const updateQuestion = (idx: number, patch: Partial<QuestionCreate>) => {
     setQuestions((qs) => qs.map((q, i) => (i === idx ? { ...q, ...patch } : q)));
@@ -169,6 +179,14 @@ export default function QuizEditor() {
     'bg-green-500/15 border-green-500/30 hover:border-green-500/50',
   ];
 
+  if (loadingQuiz) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -180,7 +198,7 @@ export default function QuizEditor() {
         <button
           onClick={save}
           disabled={saving || !title.trim()}
-          className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl text-sm font-medium transition-all duration-300 disabled:opacity-50 shadow-lg shadow-indigo-500/20"
+          className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl text-sm font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
         >
           {saving ? (
             <span className="flex items-center gap-2">
@@ -321,7 +339,7 @@ export default function QuizEditor() {
               }}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {q.answers.map((a, ai) => (
                 <div
                   key={ai}

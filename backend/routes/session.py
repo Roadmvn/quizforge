@@ -349,10 +349,8 @@ def get_session_analytics(
         responses = responses_by_qid[q.id]
         total_resp = len(responses)
         correct_resp = sum(1 for r in responses if r.is_correct)
-        avg_time = (
-            sum(r.response_time for r in responses if r.response_time is not None) / total_resp
-            if total_resp > 0 else 0
-        )
+        timed = [r.response_time for r in responses if r.response_time is not None]
+        avg_time = round(sum(timed) / len(timed), 2) if timed else 0
 
         all_correct += correct_resp
         all_responses += total_resp
@@ -742,23 +740,33 @@ async def _handle_admin_message(session_id: str, msg_type: str, data: dict):
             idx = session.current_question_idx
             question = questions[idx]
 
-            total_responses = (
+            all_participants = (
+                db.query(Participant)
+                .filter(Participant.session_id == session.id)
+                .all()
+            )
+            responses_for_q = (
                 db.query(ParticipantResponse)
                 .filter(ParticipantResponse.question_id == question.id)
                 .join(Participant)
                 .filter(Participant.session_id == session.id)
-                .count()
+                .all()
             )
-            correct_count = (
-                db.query(ParticipantResponse)
-                .filter(
-                    ParticipantResponse.question_id == question.id,
-                    ParticipantResponse.is_correct == True,
-                )
-                .join(Participant)
-                .filter(Participant.session_id == session.id)
-                .count()
-            )
+
+            total_responses = len(responses_for_q)
+            correct_count = sum(1 for r in responses_for_q if r.is_correct)
+
+            resp_by_pid = {r.participant_id: r for r in responses_for_q}
+            player_results = []
+            for p in all_participants:
+                r = resp_by_pid.get(p.id)
+                player_results.append({
+                    "participant_id": p.id,
+                    "nickname": p.nickname,
+                    "is_correct": r.is_correct if r else False,
+                    "answer_id": r.answer_id if r else None,
+                    "points_awarded": r.points_awarded if r else 0,
+                })
 
             await hub.broadcast(session_id, {
                 "type": "answer_revealed",
@@ -769,6 +777,7 @@ async def _handle_admin_message(session_id: str, msg_type: str, data: dict):
                     "correct_count": correct_count,
                 },
                 "leaderboard": _build_leaderboard(session, db),
+                "player_results": player_results,
             })
 
         elif msg_type == "end_game":

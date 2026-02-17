@@ -92,7 +92,7 @@ export default function Layout({ user, onLogout, children }: Props) {
         {/* Navigation label */}
         <div className={`${collapsed ? 'px-3' : 'px-6'} mb-2`}>
           {!collapsed && (
-            <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest">Menu</span>
+            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Menu</span>
           )}
         </div>
 
@@ -168,7 +168,7 @@ export default function Layout({ user, onLogout, children }: Props) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8">
           {children}
         </main>
       </div>

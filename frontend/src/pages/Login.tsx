@@ -17,11 +17,14 @@ export default function Login({ onLogin, onRegister }: Props) {
     e.preventDefault();
     setError('');
     setLoading(true);
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    const trimmedName = name.trim();
     try {
       if (isRegister) {
-        await onRegister(email, password, name);
+        await onRegister(trimmedEmail, trimmedPassword, trimmedName);
       } else {
-        await onLogin(email, password);
+        await onLogin(trimmedEmail, trimmedPassword);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -71,8 +74,9 @@ export default function Login({ onLogin, onRegister }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Nom d'affichage</label>
+              <label htmlFor="register-name" className="block text-xs font-medium text-slate-400 mb-1.5">Nom d'affichage</label>
               <input
+                id="register-name"
                 type="text"
                 placeholder="Votre nom"
                 value={name}
@@ -83,8 +87,9 @@ export default function Login({ onLogin, onRegister }: Props) {
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
+            <label htmlFor="login-email" className="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
             <input
+              id="login-email"
               type="email"
               placeholder="nom@exemple.com"
               value={email}
@@ -94,8 +99,9 @@ export default function Login({ onLogin, onRegister }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Mot de passe</label>
+            <label htmlFor="login-password" className="block text-xs font-medium text-slate-400 mb-1.5">Mot de passe</label>
             <input
+              id="login-password"
               type="password"
               placeholder="8 caracteres minimum"
               value={password}
@@ -115,7 +121,7 @@ export default function Login({ onLogin, onRegister }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium rounded-xl transition-all duration-300 disabled:opacity-50 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
+            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">

@@ -10,7 +10,6 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { ...opts, headers });
   if (res.status === 401 && token && !path.includes('/auth/me')) {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
     window.location.href = '/login';
     throw new Error('Session expirée');
   }
@@ -31,7 +30,6 @@ export async function authFetch(path: string, opts: RequestInit = {}): Promise<R
   const res = await fetch(`${BASE}${path}`, { ...opts, headers });
   if (res.status === 401 && token && !path.includes('/auth/me')) {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
     window.location.href = '/login';
     throw new Error('Session expirée');
   }

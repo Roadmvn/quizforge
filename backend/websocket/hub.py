@@ -15,7 +15,6 @@ Design decisions:
 
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass, field
 
@@ -91,18 +90,6 @@ class Hub:
                     await conn.ws.send_json(message)
                 except Exception:
                     self.disconnect(session_id, conn)
-
-    async def send_to_participants(self, session_id: str, message: dict):
-        room = self._rooms.get(session_id, [])
-        dead: list[Connection] = []
-        for conn in room:
-            if conn.role == "participant":
-                try:
-                    await conn.ws.send_json(message)
-                except Exception:
-                    dead.append(conn)
-        for conn in dead:
-            self.disconnect(session_id, conn)
 
     async def send_to_one(self, session_id: str, participant_id: str, message: dict):
         room = self._rooms.get(session_id, [])

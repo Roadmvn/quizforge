@@ -10,10 +10,13 @@ Design decisions:
 """
 
 import os
+import socket
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from sqlalchemy import inspect, text
 
 from database import engine
 from models import Base, User
@@ -30,6 +33,11 @@ async def lifespan(app: FastAPI):
     os.makedirs("data", exist_ok=True)
     os.makedirs("data/uploads", exist_ok=True)
     Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        columns = [c["name"] for c in inspect(engine).get_columns("users")]
+        if "is_active" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+            conn.commit()
     yield
 
 
@@ -68,17 +76,15 @@ def health():
 
 @app.get("/api/network-info")
 def network_info(current_user: User = Depends(get_current_user)):
-    import socket
     lan_ip = os.environ.get("HOST_LAN_IP")
     if not lan_ip or lan_ip == "127.0.0.1":
         try:
             lan_ip = socket.gethostbyname("host.docker.internal")
         except Exception:
             try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                s.connect(("8.8.8.8", 80))
-                lan_ip = s.getsockname()[0]
-                s.close()
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                    s.connect(("8.8.8.8", 80))
+                    lan_ip = s.getsockname()[0]
             except Exception:
                 lan_ip = "127.0.0.1"
     return {"lan_ip": lan_ip}
