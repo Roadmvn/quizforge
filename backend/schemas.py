@@ -211,3 +211,10 @@ class LeaderboardEntry(BaseModel):
     nickname: str
     score: int
     rank: int
+
+
+class AdminUserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+    display_name: str = Field(min_length=1, max_length=100)
+    role: str = Field(default="user", pattern="^(admin|user)$")

@@ -45,6 +45,25 @@ export default function Dashboard() {
     }
   };
 
+  const deleteSession = async (id: string) => {
+    if (!confirm('Supprimer cette session ?')) return;
+    try {
+      await api.delete(`/sessions/${id}`);
+      setSessions((prev) => prev.filter((x) => x.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Echec de la suppression');
+    }
+  };
+
+  const forceFinishSession = async (id: string) => {
+    try {
+      await api.post(`/sessions/${id}/finish`);
+      setSessions((prev) => prev.map((x) => x.id === id ? { ...x, status: 'finished' } : x));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Echec de la terminaison');
+    }
+  };
+
   const sessionsForQuiz = (quizId: string) =>
     sessions.filter((s) => s.quiz_id === quizId);
 
@@ -197,6 +216,15 @@ export default function Dashboard() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
+                          {(s.status === 'lobby' || s.status === 'active' || s.status === 'revealing') && (
+                            <button
+                              onClick={() => forceFinishSession(s.id)}
+                              className="px-3 py-1 text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition"
+                              title="Terminer la session"
+                            >
+                              Terminer
+                            </button>
+                          )}
                           {s.status === 'finished' && (
                             <button
                               onClick={() => navigate(`/session/${s.id}/analytics`)}
@@ -210,6 +238,14 @@ export default function Dashboard() {
                             className="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded-lg transition"
                           >
                             {s.status === 'lobby' ? 'Rejoindre' : s.status === 'finished' ? 'Voir' : 'Gerer'}
+                          </button>
+                          <button
+                            onClick={() => deleteSession(s.id)}
+                            className="p-1 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition"
+                            title="Supprimer la session"
+                            aria-label="Supprimer la session"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         </div>
                       </div>

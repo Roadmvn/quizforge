@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Quiz, Session as SessionModel, User
-from schemas import UserRead
-from services.auth import get_current_admin
+from schemas import AdminUserCreate, UserRead
+from services.auth import get_current_admin, hash_password
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -39,6 +39,29 @@ def delete_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     db.delete(user)
     db.commit()
+
+
+@router.post("/users", response_model=UserRead, status_code=201)
+def create_user(
+    payload: AdminUserCreate,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin),
+):
+    if db.query(User).filter(User.email == payload.email).first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered",
+        )
+    user = User(
+        email=payload.email,
+        hashed_password=hash_password(payload.password),
+        display_name=payload.display_name,
+        role=payload.role,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.patch("/users/{user_id}/role", response_model=UserRead)

@@ -173,6 +173,41 @@ def get_session(
     return session
 
 
+@router.delete("/api/sessions/{session_id}", status_code=204)
+def delete_session(
+    session_id: str,
+    db: DBSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    session = _get_session_or_404(session_id, db)
+    if session.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your session")
+    db.delete(session)
+    db.commit()
+
+
+@router.post("/api/sessions/{session_id}/finish")
+async def force_finish_session(
+    session_id: str,
+    db: DBSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    session = _get_session_or_404(session_id, db)
+    if session.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your session")
+    if session.status == "finished":
+        raise HTTPException(status_code=400, detail="Session already finished")
+    session.status = "finished"
+    db.commit()
+    db.refresh(session)
+    leaderboard = _build_leaderboard(session, db)
+    await hub.broadcast(session_id, {
+        "type": "game_ended",
+        "leaderboard": leaderboard,
+    })
+    return {"status": "finished", "id": session.id}
+
+
 @router.get("/api/sessions/{session_id}/qrcode")
 def get_qr_code(
     session_id: str,

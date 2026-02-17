@@ -7,6 +7,9 @@ export default function AdminPanel() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newUser, setNewUser] = useState({ email: '', password: '', display_name: '', role: 'user' });
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!error) return;
@@ -47,6 +50,21 @@ export default function AdminPanel() {
       if (stats) setStats({ ...stats, total_users: stats.total_users - 1 });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Echec de la suppression');
+    }
+  };
+
+  const createUser = async () => {
+    setCreating(true);
+    try {
+      const created = await api.post<AdminUser>('/admin/users', newUser);
+      setUsers((prev) => [created, ...prev]);
+      if (stats) setStats({ ...stats, total_users: stats.total_users + 1 });
+      setNewUser({ email: '', password: '', display_name: '', role: 'user' });
+      setShowCreateForm(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Echec de la creation');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -141,12 +159,85 @@ export default function AdminPanel() {
       )}
 
       <section>
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-white">Utilisateurs</h2>
-          <span className="bg-indigo-600/20 text-indigo-400 rounded-full px-2.5 py-0.5 text-sm font-medium">
-            {users.length}
-          </span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-white">Utilisateurs</h2>
+            <span className="bg-indigo-600/20 text-indigo-400 rounded-full px-2.5 py-0.5 text-sm font-medium">
+              {users.length}
+            </span>
+          </div>
+          <button
+            onClick={() => setShowCreateForm((v) => !v)}
+            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl text-sm font-medium transition-all duration-300 shadow-lg shadow-indigo-500/20"
+          >
+            {showCreateForm ? 'Annuler' : '+ Ajouter un utilisateur'}
+          </button>
         </div>
+
+        {showCreateForm && (
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 mb-4">
+            <h3 className="text-base font-semibold text-white mb-4">Nouvel utilisateur</h3>
+            <form
+              onSubmit={(e) => { e.preventDefault(); createUser(); }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              <div>
+                <label className="block text-sm text-slate-400 mb-1.5">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={newUser.email}
+                  onChange={(e) => setNewUser((p) => ({ ...p, email: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition text-sm"
+                  placeholder="utilisateur@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1.5">Mot de passe</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newUser.password}
+                  onChange={(e) => setNewUser((p) => ({ ...p, password: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition text-sm"
+                  placeholder="Min. 6 caracteres"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1.5">Nom d'affichage</label>
+                <input
+                  type="text"
+                  required
+                  value={newUser.display_name}
+                  onChange={(e) => setNewUser((p) => ({ ...p, display_name: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition text-sm"
+                  placeholder="Jean Dupont"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1.5">Role</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser((p) => ({ ...p, role: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition text-sm"
+                >
+                  <option value="user">Utilisateur</option>
+                  <option value="admin">Administrateur</option>
+                </select>
+              </div>
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl text-sm font-medium transition-all duration-300 shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+                >
+                  {creating ? 'Creation...' : 'Creer l\'utilisateur'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden">
           <table className="w-full text-sm">

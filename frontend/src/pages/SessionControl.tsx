@@ -132,6 +132,15 @@ export default function SessionControl() {
   const revealAnswer = () => send({ type: 'reveal_answer' });
   const endGame = () => send({ type: 'end_game' });
 
+  const forceFinishRest = async () => {
+    try {
+      await api.post(`/sessions/${sid}/finish`);
+      setGameStatus('finished');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Echec de la terminaison');
+    }
+  };
+
   const downloadCsv = async () => {
     try {
       const res = await authFetch(`/sessions/${sid}/export`);
@@ -360,6 +369,13 @@ export default function SessionControl() {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
               )}
+              <button
+                onClick={forceFinishRest}
+                className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} bg-slate-700/50 hover:bg-slate-700 border border-slate-600/50 rounded-xl font-semibold transition-all duration-300`}
+                title="Terminer via REST (utile si le WebSocket est deconnecte)"
+              >
+                Forcer la fin (REST)
+              </button>
             </div>
           </div>
         )}
