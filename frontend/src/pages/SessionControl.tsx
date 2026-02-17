@@ -222,7 +222,7 @@ export default function SessionControl() {
         </div>
       )}
 
-      <div className={isFullscreen ? 'max-w-7xl mx-auto flex-1 flex flex-col px-6 pb-6' : 'max-w-4xl mx-auto'}>
+      <div className={isFullscreen ? 'w-full flex-1 flex flex-col px-8 pb-6' : 'max-w-4xl mx-auto'}>
         {/* LOBBY */}
         {gameStatus === 'lobby' && (
           <div className={`text-center space-y-8 ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center' : ''}`}>
@@ -282,29 +282,29 @@ export default function SessionControl() {
           <div className={`space-y-6 ${isFullscreen ? 'flex-1 flex flex-col' : ''}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className={`bg-indigo-500/20 text-indigo-400 font-medium rounded-full px-3 py-1 ${isFullscreen ? 'text-base' : 'text-sm'}`}>
+                <span className={`bg-indigo-500/20 text-indigo-400 font-medium rounded-full ${isFullscreen ? 'px-5 py-2 text-lg' : 'px-3 py-1 text-sm'}`}>
                   Question {questionIdx + 1} / {totalQuestions}
                 </span>
               </div>
-              <div className={`flex items-center gap-2 text-slate-400 ${isFullscreen ? 'text-base' : 'text-sm'}`}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              <div className={`flex items-center gap-2 text-slate-400 ${isFullscreen ? 'text-lg' : 'text-sm'}`}>
+                <svg className={`${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 {answeredCount} / {totalParticipants} ont repondu
               </div>
             </div>
 
-            <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center p-10 max-w-5xl w-full mx-auto' : 'p-8'}`}>
-              <h2 className={`${isFullscreen ? 'text-3xl md:text-4xl' : 'text-2xl'} font-bold text-white mb-6`}>{currentQuestion.text as string}</h2>
+            <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center p-10 w-full' : 'p-8'}`}>
+              <h2 className={`${isFullscreen ? 'text-4xl md:text-5xl' : 'text-2xl'} font-bold text-white mb-8`}>{currentQuestion.text as string}</h2>
               {!!currentQuestion.image_url && (
-                <img src={currentQuestion.image_url as string} alt="Question" className={`${isFullscreen ? 'max-h-[50vh]' : 'max-h-80'} w-full object-contain rounded-xl bg-slate-900/50 mx-auto mb-6`} />
+                <img src={currentQuestion.image_url as string} alt="Question" className={`${isFullscreen ? 'max-h-[65vh]' : 'max-h-80'} w-full object-contain rounded-xl bg-slate-900/50 mx-auto mb-6`} />
               )}
-              <div className={`grid grid-cols-2 gap-4 ${isFullscreen ? 'w-full' : ''}`}>
+              <div className={`grid grid-cols-2 ${isFullscreen ? 'gap-6 w-full' : 'gap-4'}`}>
                 {(currentQuestion.answers as Array<{ id: string; text: string; is_correct?: boolean; order: number }>).map(
                   (a, i) => {
                     const ansColors = ['bg-red-500/20 border-red-500/30', 'bg-blue-500/20 border-blue-500/30', 'bg-yellow-500/20 border-yellow-500/30', 'bg-green-500/20 border-green-500/30'];
                     return (
                       <div
                         key={a.id}
-                        className={`${isFullscreen ? 'p-6 text-xl' : 'p-4 text-lg'} rounded-xl font-medium border transition-all duration-300 ${ansColors[i] || 'bg-slate-800 border-slate-700'} ${
+                        className={`${isFullscreen ? 'p-8 text-2xl' : 'p-4 text-lg'} rounded-xl font-medium border transition-all duration-300 ${ansColors[i] || 'bg-slate-800 border-slate-700'} ${
                           revealed && a.is_correct ? 'ring-4 ring-green-400/50 border-green-400 shadow-lg shadow-green-500/20' : ''
                         }`}
                       >
@@ -322,7 +322,7 @@ export default function SessionControl() {
             </div>
 
             {revealed && stats && (
-              <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-8 max-w-5xl w-full mx-auto' : 'p-6'}`}>
+              <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-8 w-full' : 'p-6'}`}>
                 {/* Résultats par joueur - section principale */}
                 {playerResults.length > 0 && (
                   <div className={isFullscreen ? 'mb-8' : 'mb-6'}>
@@ -343,7 +343,7 @@ export default function SessionControl() {
                     {/* Correct players */}
                     {playerResults.filter(pr => pr.is_correct).length > 0 && (
                       <div className={isFullscreen ? 'mb-4' : 'mb-3'}>
-                        <div className={`grid grid-cols-2 sm:grid-cols-3 ${isFullscreen ? 'md:grid-cols-4 gap-3' : 'md:grid-cols-4 gap-2'}`}>
+                        <div className={`grid grid-cols-2 sm:grid-cols-3 ${isFullscreen ? 'md:grid-cols-5 lg:grid-cols-6 gap-3' : 'md:grid-cols-4 gap-2'}`}>
                           {playerResults.filter(pr => pr.is_correct).map((pr) => (
                             <div
                               key={pr.participant_id}
@@ -363,7 +363,7 @@ export default function SessionControl() {
                     {/* Wrong players */}
                     {playerResults.filter(pr => !pr.is_correct).length > 0 && (
                       <div>
-                        <div className={`grid grid-cols-2 sm:grid-cols-3 ${isFullscreen ? 'md:grid-cols-4 gap-3' : 'md:grid-cols-4 gap-2'}`}>
+                        <div className={`grid grid-cols-2 sm:grid-cols-3 ${isFullscreen ? 'md:grid-cols-5 lg:grid-cols-6 gap-3' : 'md:grid-cols-4 gap-2'}`}>
                           {playerResults.filter(pr => !pr.is_correct && pr.answer_id).map((pr) => (
                             <div
                               key={pr.participant_id}
@@ -415,7 +415,7 @@ export default function SessionControl() {
               </div>
             )}
 
-            <div className={`flex gap-4 justify-center ${isFullscreen ? 'pt-4 pb-2' : ''}`}>
+            <div className={`flex gap-4 justify-center ${isFullscreen ? 'pt-6 pb-2' : ''}`}>
               {!revealed ? (
                 <button
                   onClick={revealAnswer}
