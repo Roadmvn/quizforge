@@ -7,6 +7,7 @@ export default function Dashboard() {
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [expandedQuiz, setExpandedQuiz] = useState<string | null>(null);
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -203,62 +204,103 @@ export default function Dashboard() {
 
                 {isExpanded && qSessions.length > 0 && (
                   <div className="border-t border-slate-700/50 bg-slate-900/50">
-                    {qSessions.map((s) => (
-                      <div
-                        key={s.id}
-                        className="px-5 py-3 hover:bg-slate-800/50 transition border-b border-slate-800/50 last:border-b-0 space-y-2"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-indigo-400 text-sm font-semibold">{s.code}</span>
-                          <span className="text-slate-400 text-sm">
-                            {s.participant_count} joueur{s.participant_count > 1 && 's'}
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              s.status === 'lobby'
-                                ? 'bg-yellow-500/20 text-yellow-400'
-                                : s.status === 'finished'
-                                  ? 'bg-slate-700 text-slate-400'
-                                  : 'bg-green-500/20 text-green-400'
-                            }`}
-                          >
-                            {s.status === 'lobby' ? 'En attente' : s.status === 'finished' ? 'Terminee' : 'En cours'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {(s.status === 'lobby' || s.status === 'active' || s.status === 'revealing') && (
-                            <button
-                              onClick={() => forceFinishSession(s.id)}
-                              className="px-3 py-1.5 text-xs font-medium bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition whitespace-nowrap"
-                            >
-                              Terminer
-                            </button>
+                    {qSessions.map((s) => {
+                      const isSessionExpanded = expandedSession === s.id;
+                      return (
+                        <div
+                          key={s.id}
+                          className="border-b border-slate-800/50 last:border-b-0"
+                        >
+                          <div className="px-5 py-3 hover:bg-slate-800/50 transition space-y-2">
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono text-indigo-400 text-sm font-semibold">{s.code}</span>
+                              {s.participant_count > 0 && (
+                                <button
+                                  onClick={() => setExpandedSession(isSessionExpanded ? null : s.id)}
+                                  className="text-slate-400 hover:text-slate-200 text-sm flex items-center gap-1 transition"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                  {s.participant_count} joueur{s.participant_count > 1 ? 's' : ''}
+                                  <svg className={`w-3 h-3 transition-transform ${isSessionExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                              )}
+                              {s.participant_count === 0 && (
+                                <span className="text-slate-500 text-sm">0 joueur</span>
+                              )}
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  s.status === 'lobby'
+                                    ? 'bg-yellow-500/20 text-yellow-400'
+                                    : s.status === 'finished'
+                                      ? 'bg-slate-700 text-slate-400'
+                                      : 'bg-green-500/20 text-green-400'
+                                }`}
+                              >
+                                {s.status === 'lobby' ? 'En attente' : s.status === 'finished' ? 'Terminee' : 'En cours'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {(s.status === 'lobby' || s.status === 'active' || s.status === 'revealing') && (
+                                <button
+                                  onClick={() => forceFinishSession(s.id)}
+                                  className="px-3 py-1.5 text-xs font-medium bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition whitespace-nowrap"
+                                >
+                                  Terminer
+                                </button>
+                              )}
+                              {s.status === 'finished' && (
+                                <button
+                                  onClick={() => navigate(`/session/${s.id}/analytics`)}
+                                  className="px-3 py-1.5 text-xs font-medium bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg transition whitespace-nowrap"
+                                >
+                                  Analytiques
+                                </button>
+                              )}
+                              <button
+                                onClick={() => navigate(`/session/${s.id}`)}
+                                className="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 rounded-lg transition whitespace-nowrap"
+                              >
+                                {s.status === 'lobby' ? 'Rejoindre' : s.status === 'finished' ? 'Voir' : 'Gerer'}
+                              </button>
+                              <button
+                                onClick={() => deleteSession(s.id)}
+                                className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition ml-auto"
+                                title="Supprimer la session"
+                                aria-label="Supprimer la session"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </div>
+                          </div>
+
+                          {isSessionExpanded && s.participants.length > 0 && (
+                            <div className="px-5 pb-3">
+                              <div className="bg-slate-800/80 rounded-lg border border-slate-700/50 overflow-hidden">
+                                {s.participants.map((p, i) => (
+                                  <div
+                                    key={p.nickname}
+                                    className="flex items-center justify-between px-3 py-2 text-sm border-b border-slate-700/30 last:border-b-0"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                        i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                                        i === 1 ? 'bg-slate-400/20 text-slate-300' :
+                                        i === 2 ? 'bg-amber-600/20 text-amber-400' :
+                                        'bg-slate-700 text-slate-500'
+                                      }`}>
+                                        {i + 1}
+                                      </span>
+                                      <span className="text-slate-300">{p.nickname}</span>
+                                    </div>
+                                    <span className="font-mono text-xs text-indigo-400">{p.score} pts</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           )}
-                          {s.status === 'finished' && (
-                            <button
-                              onClick={() => navigate(`/session/${s.id}/analytics`)}
-                              className="px-3 py-1.5 text-xs font-medium bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg transition whitespace-nowrap"
-                            >
-                              Analytiques
-                            </button>
-                          )}
-                          <button
-                            onClick={() => navigate(`/session/${s.id}`)}
-                            className="px-3 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 rounded-lg transition whitespace-nowrap"
-                          >
-                            {s.status === 'lobby' ? 'Rejoindre' : s.status === 'finished' ? 'Voir' : 'Gerer'}
-                          </button>
-                          <button
-                            onClick={() => deleteSession(s.id)}
-                            className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition ml-auto"
-                            title="Supprimer la session"
-                            aria-label="Supprimer la session"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

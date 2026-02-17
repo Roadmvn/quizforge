@@ -105,6 +105,11 @@ export interface Session {
   participants: Participant[];
 }
 
+export interface SessionParticipant {
+  nickname: string;
+  score: number;
+}
+
 export interface SessionSummary {
   id: string;
   quiz_id: string;
@@ -113,6 +118,7 @@ export interface SessionSummary {
   created_at: string;
   quiz_title: string;
   participant_count: number;
+  participants: SessionParticipant[];
 }
 
 export interface Participant {

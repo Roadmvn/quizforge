@@ -173,6 +173,13 @@ class SessionRead(BaseModel):
     participants: list[ParticipantRead]
 
 
+class SessionParticipant(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    nickname: str
+    score: int
+
+
 class SessionSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -183,6 +190,7 @@ class SessionSummary(BaseModel):
     created_at: datetime
     quiz_title: str = ""
     participant_count: int = 0
+    participants: list[SessionParticipant] = []
 
 
 class JoinSession(BaseModel):

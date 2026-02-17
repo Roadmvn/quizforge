@@ -156,6 +156,7 @@ def list_sessions(
             created_at=s.created_at,
             quiz_title=s.quiz.title if s.quiz else "",
             participant_count=len(s.participants),
+            participants=sorted(s.participants, key=lambda p: p.score, reverse=True),
         )
         for s in sessions
     ]
