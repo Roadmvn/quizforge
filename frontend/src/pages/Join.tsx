@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 
 interface JoinResponse {
@@ -8,13 +8,39 @@ interface JoinResponse {
   token: string;
 }
 
+interface StoredCredentials {
+  pid: string;
+  ptoken: string;
+  nickname: string;
+  code: string;
+}
+
 export default function Join() {
   const { code: urlCode } = useParams<{ code: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [code, setCode] = useState(urlCode || '');
+  const [code, setCode] = useState(urlCode || searchParams.get('code') || '');
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [savedSession, setSavedSession] = useState<{ sid: string; creds: StoredCredentials } | null>(null);
+
+  useEffect(() => {
+    if (code.length !== 6) { setSavedSession(null); return; }
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith('quizforge_participant_')) continue;
+      try {
+        const data: StoredCredentials = JSON.parse(localStorage.getItem(key)!);
+        if (data.code === code.toUpperCase() && data.pid && data.ptoken) {
+          const sid = key.replace('quizforge_participant_', '');
+          setSavedSession({ sid, creds: data });
+          return;
+        }
+      } catch { /* ignore */ }
+    }
+    setSavedSession(null);
+  }, [code]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,11 +52,12 @@ export default function Join() {
         code: code.toUpperCase(),
         nickname,
       });
-      sessionStorage.setItem('pid', res.id);
-      sessionStorage.setItem('ptoken', res.token);
-      sessionStorage.setItem('nickname', nickname);
+      const storageKey = `quizforge_participant_${res.session_id}`;
+      localStorage.setItem(storageKey, JSON.stringify({
+        pid: res.id, ptoken: res.token, nickname, code: code.toUpperCase(),
+      }));
       navigate(`/play/${res.session_id}`, {
-        state: { pid: res.id, ptoken: res.token, nickname },
+        state: { pid: res.id, ptoken: res.token, nickname, code: code.toUpperCase() },
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impossible de rejoindre');
@@ -76,6 +103,22 @@ export default function Join() {
           >
             {loading ? 'Connexion...' : 'Rejoindre'}
           </button>
+          {savedSession && (
+            <button
+              type="button"
+              onClick={() => navigate(`/play/${savedSession.sid}`, {
+                state: {
+                  pid: savedSession.creds.pid,
+                  ptoken: savedSession.creds.ptoken,
+                  nickname: savedSession.creds.nickname,
+                  code: savedSession.creds.code,
+                },
+              })}
+              className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold text-lg rounded-lg transition"
+            >
+              Reprendre la partie ({savedSession.creds.nickname})
+            </button>
+          )}
         </form>
       </div>
     </div>

@@ -440,14 +440,29 @@ async def join_session(payload: JoinSession, db: DBSession = Depends(get_db)):
     session = db.query(Session).filter(Session.code == payload.code.upper()).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    if session.status != "lobby":
-        raise HTTPException(status_code=400, detail="Session is not accepting new participants")
+    if session.status == "finished":
+        raise HTTPException(status_code=400, detail="Session is finished")
 
     existing = (
         db.query(Participant)
         .filter(Participant.session_id == session.id, Participant.nickname == payload.nickname)
         .first()
     )
+
+    # Active/revealing session: only allow rejoin with existing nickname
+    if session.status in ("active", "revealing"):
+        if not existing:
+            raise HTTPException(status_code=400, detail="Session already started")
+        return {
+            "id": existing.id,
+            "nickname": existing.nickname,
+            "score": existing.score,
+            "joined_at": existing.joined_at,
+            "session_id": session.id,
+            "token": existing.token,
+        }
+
+    # Lobby: reject duplicate nicknames
     if existing:
         raise HTTPException(status_code=409, detail="Nickname already taken in this session")
 

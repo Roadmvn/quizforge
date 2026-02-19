@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
 import type { WsMessage, LeaderboardEntry } from '../lib/types';
 
@@ -18,10 +18,24 @@ interface QuestionData {
 export default function Play() {
   const { sid } = useParams<{ sid: string }>();
   const location = useLocation();
-  const state = location.state as { pid?: string; ptoken?: string; nickname?: string } | null;
-  const pid = state?.pid || sessionStorage.getItem('pid') || '';
-  const ptoken = state?.ptoken || sessionStorage.getItem('ptoken') || '';
-  const nickname = state?.nickname || sessionStorage.getItem('nickname') || '';
+  const navigate = useNavigate();
+  const state = location.state as { pid?: string; ptoken?: string; nickname?: string; code?: string } | null;
+
+  const storageKey = `quizforge_participant_${sid}`;
+  const stored = (() => {
+    try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { return {}; }
+  })();
+
+  const pid = state?.pid || stored.pid || '';
+  const ptoken = state?.ptoken || stored.ptoken || '';
+  const nickname = state?.nickname || stored.nickname || '';
+  const sessionCode = state?.code || stored.code || '';
+
+  useEffect(() => {
+    if (pid && ptoken) {
+      localStorage.setItem(storageKey, JSON.stringify({ pid, ptoken, nickname, code: sessionCode }));
+    }
+  }, [pid, ptoken, nickname, sessionCode, storageKey]);
 
   const [phase, setPhase] = useState<Phase>('waiting');
   const [question, setQuestion] = useState<QuestionData | null>(null);
@@ -82,11 +96,12 @@ export default function Play() {
         setPhase('finished');
         stopTimer();
         setLeaderboard(msg.leaderboard as LeaderboardEntry[]);
+        localStorage.removeItem(storageKey);
         break;
       case 'error':
         break;
     }
-  }, []);
+  }, [storageKey]);
 
   const { send, connected, failed } = useWebSocket({
     sessionId: sid || '',
@@ -134,12 +149,13 @@ export default function Play() {
         {/* FAILED */}
         {failed && (
           <div className="text-center space-y-4">
-            <p className="text-red-400 text-lg">Connexion perdue. Rechargez la page.</p>
+            <p className="text-red-400 text-lg">Connexion perdue</p>
+            <p className="text-slate-400">Impossible de se reconnecter au serveur.</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => navigate(sessionCode ? `/join/${sessionCode}` : '/join')}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition"
             >
-              Recharger
+              Reconnecter
             </button>
           </div>
         )}

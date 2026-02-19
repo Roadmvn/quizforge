@@ -10,8 +10,9 @@ interface UseWebSocketOpts {
   onMessage: (msg: WsMessage) => void;
 }
 
-const MAX_RECONNECT_ATTEMPTS = 5;
+const MAX_RECONNECT_ATTEMPTS = 20;
 const BASE_DELAY = 1000;
+const MAX_DELAY = 10_000;
 
 export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }: UseWebSocketOpts) {
   const wsRef = useRef<WebSocket | null>(null);
@@ -54,7 +55,7 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
       authenticatedRef.current = false;
       if (unmountedRef.current || e.code >= 4000) return;
       if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
-        const delay = BASE_DELAY * Math.pow(2, reconnectAttempts.current);
+        const delay = Math.min(BASE_DELAY * Math.pow(2, reconnectAttempts.current), MAX_DELAY);
         reconnectAttempts.current++;
         reconnectTimer.current = setTimeout(connect, delay);
       } else {
