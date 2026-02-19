@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { useWebSocket, MAX_RECONNECT_ATTEMPTS } from '../hooks/useWebSocket';
 import type { WsMessage, LeaderboardEntry } from '../lib/types';
 
 type Phase = 'waiting' | 'question' | 'answered' | 'revealed' | 'finished';
@@ -43,6 +43,7 @@ export default function Play() {
   const [result, setResult] = useState<{ is_correct: boolean; points_awarded: number; total_score: number } | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [sendError, setSendError] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
 
@@ -70,15 +71,20 @@ export default function Play() {
   const handleMessage = useCallback((msg: WsMessage) => {
     switch (msg.type) {
       case 'game_started':
-        setPhase('waiting');
+        setPhase((prev) => prev === 'waiting' ? 'waiting' : prev);
         break;
-      case 'new_question':
+      case 'new_question': {
         setPhase('question');
         setSelectedAnswer(null);
         setResult(null);
+        setSendError(false);
         setQuestion(msg as unknown as QuestionData);
-        startTimer(msg.time_limit as number);
+        const tl = msg.time_limit as number;
+        const elapsed = msg.elapsed as number | undefined;
+        const remaining = elapsed != null ? Math.max(0, tl - elapsed) : tl;
+        startTimer(remaining);
         break;
+      }
       case 'answer_submitted':
         setResult({
           is_correct: msg.is_correct as boolean,
@@ -103,7 +109,7 @@ export default function Play() {
     }
   }, [storageKey]);
 
-  const { send, connected, failed } = useWebSocket({
+  const { send, connected, failed, reconnecting, attempt } = useWebSocket({
     sessionId: sid || '',
     role: 'participant',
     pid,
@@ -113,10 +119,16 @@ export default function Play() {
 
   const submitAnswer = (answerId: string) => {
     if (selectedAnswer) return;
-    setSelectedAnswer(answerId);
-    setPhase('answered');
+    setSendError(false);
     const elapsed = (Date.now() - startTimeRef.current) / 1000;
-    send({ type: 'submit_answer', answer_id: answerId, response_time: Math.round(elapsed * 100) / 100 });
+    const ok = send({ type: 'submit_answer', answer_id: answerId, response_time: Math.round(elapsed * 100) / 100 });
+    if (ok) {
+      setSelectedAnswer(answerId);
+      setPhase('answered');
+      stopTimer();
+    } else {
+      setSendError(true);
+    }
   };
 
   const myRank = leaderboard.find((e) => e.participant_id === pid);
@@ -144,6 +156,18 @@ export default function Play() {
         <span className="font-semibold">{nickname}</span>
         <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} aria-label="Indicateur de connexion" />
       </header>
+
+      {reconnecting && (
+        <div className="bg-yellow-600/90 text-white text-center text-sm py-2 px-4">
+          Reconnexion en cours (tentative {attempt}/{MAX_RECONNECT_ATTEMPTS})...
+        </div>
+      )}
+
+      {sendError && (
+        <div className="bg-red-600/90 text-white text-center text-sm py-2 px-4">
+          Erreur d'envoi. Veuillez re-essayer.
+        </div>
+      )}
 
       <main className="flex-1 flex items-center justify-center p-4">
         {/* FAILED */}

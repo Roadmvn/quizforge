@@ -22,6 +22,7 @@ import logging
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DBSession, joinedload
 
@@ -206,6 +207,7 @@ async def force_finish_session(
         "type": "game_ended",
         "leaderboard": leaderboard,
     })
+    hub.close_room(session_id)
     return {"status": "finished", "id": session.id}
 
 
@@ -612,7 +614,10 @@ async def ws_session(
         finally:
             db.close()
 
-        await websocket.send_text(json.dumps({"type": "auth_ok"}))
+        auth_ok_msg = {"type": "auth_ok"}
+        if role == "admin":
+            auth_ok_msg["online_count"] = hub.get_participant_count(session_id)
+        await websocket.send_text(json.dumps(auth_ok_msg))
 
         # Late-joiner sync: if participant connects after game started, send current state
         if role == "participant":
@@ -631,12 +636,34 @@ async def ws_session(
                     idx = sess.current_question_idx
                     if 0 <= idx < len(questions):
                         reveal = sess.status == "revealing"
-                        await websocket.send_text(json.dumps({
+                        elapsed = hub.get_elapsed_since_question(session_id)
+                        q_payload = {
                             "type": "new_question",
                             "question_idx": idx,
                             "total_questions": len(questions),
                             **_question_payload(questions[idx], reveal=reveal),
-                        }))
+                        }
+                        if elapsed is not None:
+                            q_payload["elapsed"] = round(elapsed, 2)
+                        await websocket.send_text(json.dumps(q_payload))
+
+                        # Send own answer state if participant already answered
+                        existing_resp = (
+                            db_sync.query(ParticipantResponse)
+                            .filter(
+                                ParticipantResponse.participant_id == pid,
+                                ParticipantResponse.question_id == questions[idx].id,
+                            )
+                            .first()
+                        )
+                        if existing_resp:
+                            p = db_sync.query(Participant).filter(Participant.id == pid).first()
+                            await websocket.send_text(json.dumps({
+                                "type": "answer_submitted",
+                                "is_correct": existing_resp.is_correct,
+                                "points_awarded": existing_resp.points_awarded,
+                                "total_score": p.score if p else 0,
+                            }))
             finally:
                 db_sync.close()
 
@@ -690,6 +717,12 @@ async def ws_session(
         logger.exception("WebSocket error for session %s", session_id)
         if conn:
             hub.disconnect(session_id, conn)
+        if role == "participant" and pid:
+            await hub.send_to_admin(session_id, {
+                "type": "participant_disconnected",
+                "participant_id": pid,
+                "online_count": hub.get_participant_count(session_id),
+            })
 
 
 # ---------------------------------------------------------------------------
@@ -803,6 +836,7 @@ async def _handle_admin_message(session_id: str, msg_type: str, data: dict):
                 "type": "game_ended",
                 "leaderboard": _build_leaderboard(session, db),
             })
+            hub.close_room(session_id)
     except Exception:
         db.rollback()
         logger.exception("Error handling admin message %s", msg_type)
@@ -878,8 +912,11 @@ async def _handle_participant_message(
             )
             db.add(response)
 
-            participant = db.query(Participant).filter(Participant.id == participant_id).first()
-            participant.score += points
+            db.execute(
+                update(Participant)
+                .where(Participant.id == participant_id)
+                .values(score=Participant.score + points)
+            )
 
             try:
                 db.commit()
@@ -892,6 +929,7 @@ async def _handle_participant_message(
                 return
 
             # Confirm to participant
+            participant = db.query(Participant).filter(Participant.id == participant_id).first()
             await hub.send_to_one(session_id, participant_id, {
                 "type": "answer_submitted",
                 "is_correct": is_correct,

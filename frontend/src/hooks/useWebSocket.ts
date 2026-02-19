@@ -10,7 +10,7 @@ interface UseWebSocketOpts {
   onMessage: (msg: WsMessage) => void;
 }
 
-const MAX_RECONNECT_ATTEMPTS = 20;
+export const MAX_RECONNECT_ATTEMPTS = 20;
 const BASE_DELAY = 1000;
 const MAX_DELAY = 10_000;
 
@@ -18,6 +18,8 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
   const reconnectAttempts = useRef(0);
@@ -57,8 +59,11 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
       if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
         const delay = Math.min(BASE_DELAY * Math.pow(2, reconnectAttempts.current), MAX_DELAY);
         reconnectAttempts.current++;
+        setReconnecting(true);
+        setAttempt(reconnectAttempts.current);
         reconnectTimer.current = setTimeout(connect, delay);
       } else {
+        setReconnecting(false);
         setFailed(true);
       }
     };
@@ -70,6 +75,8 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
           if (data.type === 'auth_ok') {
             authenticatedRef.current = true;
             setConnected(true);
+            setReconnecting(false);
+            setAttempt(0);
             reconnectAttempts.current = 0;
           }
           return;
@@ -89,11 +96,13 @@ export function useWebSocket({ sessionId, role, token, pid, ptoken, onMessage }:
     };
   }, [connect]);
 
-  const send = useCallback((msg: WsMessage) => {
+  const send = useCallback((msg: WsMessage): boolean => {
     if (wsRef.current?.readyState === WebSocket.OPEN && authenticatedRef.current) {
       wsRef.current.send(JSON.stringify(msg));
+      return true;
     }
+    return false;
   }, []);
 
-  return { send, connected, failed };
+  return { send, connected, failed, reconnecting, attempt };
 }

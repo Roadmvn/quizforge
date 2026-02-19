@@ -52,6 +52,13 @@ class Hub:
         participant_id: str | None = None,
         nickname: str | None = None,
     ) -> Connection:
+        room = self._room(session_id)
+        # Remove stale connection for same participant (reconnection)
+        if participant_id:
+            room[:] = [c for c in room if c.participant_id != participant_id]
+        # Remove stale admin connection on reconnect
+        if role == "admin":
+            room[:] = [c for c in room if c.role != "admin"]
         if role == "participant" and self.get_participant_count(session_id) >= MAX_PARTICIPANTS:
             await ws.send_json({"type": "error", "message": "Session is full"})
             await ws.close(code=4029)
@@ -59,7 +66,7 @@ class Hub:
         conn = Connection(
             ws=ws, role=role, participant_id=participant_id, nickname=nickname
         )
-        self._room(session_id).append(conn)
+        room.append(conn)
         return conn
 
     def disconnect(self, session_id: str, conn: Connection):
@@ -112,6 +119,11 @@ class Hub:
         if sent_at is None:
             return None
         return time.monotonic() - sent_at
+
+    def close_room(self, session_id: str):
+        """Remove room and clean up question timer on game end."""
+        self._rooms.pop(session_id, None)
+        self._question_sent_at.pop(session_id, None)
 
 
 # Singleton instance
