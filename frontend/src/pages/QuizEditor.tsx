@@ -617,7 +617,7 @@ export default function QuizEditor() {
                             updateAnswer(qi, ai, { text: e.target.value });
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="w-full bg-transparent text-[#e8e8f0] placeholder-[#3d3d52] focus:outline-none text-sm font-medium"
+                          className="w-full bg-transparent text-[#e8e8f0] placeholder-[#6b6b80] focus:outline-none text-sm font-medium cursor-text"
                         />
                       </div>
                     );

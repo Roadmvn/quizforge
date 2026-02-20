@@ -77,14 +77,7 @@ export default function SessionControl() {
     }).catch((e) => setError(e.message));
 
     const fetchQr = async () => {
-      let baseUrl = window.location.origin;
-      const hostname = window.location.hostname;
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        try {
-          const info = await api.get<{ lan_ip: string }>('/network-info');
-          baseUrl = `${window.location.protocol}//${info.lan_ip}:${window.location.port}`;
-        } catch { /* fallback to origin */ }
-      }
+      const baseUrl = window.location.origin;
       const qr = await api.get<{ qr_base64: string; join_url: string; code: string }>(
         `/sessions/${sid}/qrcode?base_url=${encodeURIComponent(baseUrl)}`
       );
@@ -388,47 +381,118 @@ export default function SessionControl() {
               </h2>
             </div>
 
-            {/* QR Code in glass card with purple border glow */}
+            {/* QR + Code combined premium card */}
             {qrData && (
-              <div className="inline-block">
-                <div
-                  className="p-5 rounded-2xl"
-                  style={{
-                    background: 'rgba(15, 15, 35, 0.6)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(124, 92, 252, 0.2)',
-                    boxShadow: '0 0 40px rgba(124,92,252,0.12), 0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
-                  }}
-                >
-                  <div className="bg-white p-3 rounded-xl">
-                    <img src={qrData.qr_base64} alt="QR Code" className="w-64 h-64" />
+              <div
+                className={`inline-flex flex-col md:flex-row items-center gap-8 rounded-3xl ${isFullscreen ? 'p-10' : 'p-8'}`}
+                style={{
+                  background: 'rgba(15, 15, 35, 0.7)',
+                  backdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(124, 92, 252, 0.15)',
+                  boxShadow: '0 0 80px rgba(124,92,252,0.08), 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
+                }}
+              >
+                {/* QR Code with animated gradient border */}
+                <div className="relative">
+                  {/* Outer glow ring */}
+                  <div
+                    className="absolute -inset-1 rounded-2xl opacity-60"
+                    style={{
+                      background: 'linear-gradient(135deg, #7c5cfc, #a855f7, #7c5cfc)',
+                      filter: 'blur(8px)',
+                    }}
+                  />
+                  {/* QR container */}
+                  <div
+                    className="relative rounded-2xl p-1"
+                    style={{
+                      background: 'linear-gradient(135deg, #7c5cfc, #a855f7)',
+                    }}
+                  >
+                    <div
+                      className="bg-white rounded-xl p-3 relative"
+                      style={{ boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.06)' }}
+                    >
+                      <img
+                        src={qrData.qr_base64}
+                        alt="QR Code"
+                        className={`${isFullscreen ? 'w-72 h-72' : 'w-56 h-56'}`}
+                        style={{ imageRendering: 'pixelated' }}
+                      />
+                    </div>
+                  </div>
+                  {/* Scan label */}
+                  <div
+                    className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] text-white whitespace-nowrap"
+                    style={{
+                      background: 'linear-gradient(135deg, #7c5cfc, #a855f7)',
+                      boxShadow: '0 4px 15px rgba(124,92,252,0.3)',
+                    }}
+                  >
+                    Scanner pour rejoindre
+                  </div>
+                </div>
+
+                {/* Code + URL section */}
+                <div className="flex flex-col items-center gap-4">
+                  <p className="text-[10px] text-[#6b6b80] uppercase tracking-[0.25em] font-bold">Code d'acces</p>
+
+                  {/* Individual letter boxes */}
+                  <div className="flex gap-2">
+                    {session.code.split('').map((char, i) => (
+                      <div
+                        key={i}
+                        className={`${isFullscreen ? 'w-16 h-20 text-4xl' : 'w-12 h-16 text-3xl'} rounded-xl flex items-center justify-center font-mono font-black text-white transition-all duration-300`}
+                        style={{
+                          background: 'rgba(124, 92, 252, 0.08)',
+                          border: '1px solid rgba(124, 92, 252, 0.2)',
+                          boxShadow: '0 0 20px rgba(124,92,252,0.06), inset 0 1px 0 rgba(255,255,255,0.05)',
+                          animationDelay: `${i * 0.05}s`,
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'rgba(124, 92, 252, 0.15)';
+                          e.currentTarget.style.borderColor = 'rgba(124, 92, 252, 0.4)';
+                          e.currentTarget.style.boxShadow = '0 0 30px rgba(124,92,252,0.2), inset 0 1px 0 rgba(255,255,255,0.08)';
+                          e.currentTarget.style.transform = 'translateY(-3px)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'rgba(124, 92, 252, 0.08)';
+                          e.currentTarget.style.borderColor = 'rgba(124, 92, 252, 0.2)';
+                          e.currentTarget.style.boxShadow = '0 0 20px rgba(124,92,252,0.06), inset 0 1px 0 rgba(255,255,255,0.05)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                      >
+                        {char}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(124,92,252,0.2), transparent)' }} />
+
+                  {/* URL with copy button */}
+                  <div
+                    className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl cursor-pointer group"
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                    }}
+                    onClick={() => { navigator.clipboard.writeText(qrData.join_url); }}
+                    title="Cliquer pour copier"
+                    onMouseOver={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.25)'; e.currentTarget.style.background = 'rgba(124,92,252,0.05)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#7c5cfc]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    <span className="text-xs text-[#6b6b80] font-mono group-hover:text-[#8888a0] transition-colors">{qrData.join_url}</span>
+                    <svg className="w-3.5 h-3.5 text-[#4a4a64] group-hover:text-[#7c5cfc] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
                   </div>
                 </div>
               </div>
             )}
-
-            {/* Code display - big glass card with gradient text */}
-            <div
-              className="inline-block px-10 py-6 rounded-2xl"
-              style={{
-                ...glassCard,
-                boxShadow: '0 0 50px rgba(124,92,252,0.1), 0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
-              }}
-            >
-              <p className="text-[10px] text-[#4a4a64] uppercase tracking-[0.2em] font-medium mb-3">Code d'acces</p>
-              <p
-                className={`${isFullscreen ? 'text-6xl' : 'text-5xl'} font-mono font-black tracking-[0.3em]`}
-                style={{
-                  background: 'linear-gradient(135deg, #7c5cfc, #a855f7)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  filter: 'drop-shadow(0 0 20px rgba(124,92,252,0.3))',
-                }}
-              >
-                {session.code}
-              </p>
-              {qrData && <p className="text-[#4a4a64] text-xs mt-3">{qrData.join_url}</p>}
-            </div>
 
             {/* Stats + participants + start */}
             <div className="rounded-2xl p-6" style={glassCard}>
