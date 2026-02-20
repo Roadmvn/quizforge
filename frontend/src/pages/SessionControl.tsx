@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { api, authFetch } from '../lib/api';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { useWebSocket, MAX_RECONNECT_ATTEMPTS } from '../hooks/useWebSocket';
 import type { Session, LeaderboardEntry, WsMessage } from '../lib/types';
 
 export default function SessionControl() {
@@ -129,7 +129,7 @@ export default function SessionControl() {
     }
   }, [sid]);
 
-  const { send, connected } = useWebSocket({
+  const { send, connected, reconnecting, attempt } = useWebSocket({
     sessionId: sid || '',
     role: 'admin',
     token,
@@ -357,6 +357,15 @@ export default function SessionControl() {
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
+        </div>
+      )}
+
+      {reconnecting && (
+        <div
+          className={`mb-4 rounded-2xl px-5 py-3 text-center text-sm font-medium text-yellow-400 ${isFullscreen ? 'mx-8' : ''}`}
+          style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}
+        >
+          Reconnexion en cours (tentative {attempt}/{MAX_RECONNECT_ATTEMPTS})...
         </div>
       )}
 

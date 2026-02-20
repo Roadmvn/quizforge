@@ -10,10 +10,15 @@ Guide complet pour deployer QuizForge sur un VPS en production.
 
 ## Deploiement rapide (script automatique)
 
-Le script `deploy/setup.sh` installe Docker, configure nginx, genere le `.env` et lance l'app en une commande :
+Le script `deploy/setup.sh` installe Docker, configure nginx, genere le `.env` et lance l'app en une commande.
+
+**Methode recommandee** (telecharger puis executer) :
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Roadmvn/quizforge/main/deploy/setup.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/Roadmvn/quizforge/main/deploy/setup.sh -o /tmp/setup.sh
+# Verifier le contenu du script avant de l'executer
+less /tmp/setup.sh
+sudo bash /tmp/setup.sh
 ```
 
 Le script demande interactivement :
@@ -223,6 +228,47 @@ Nginx (port 80/443)
           v
       SQLite (volume Docker)
 ```
+
+## Securite en production
+
+### Checklist
+
+- [ ] `QUIZFORGE_SECRET_KEY` genere avec `openssl rand -hex 32` (minimum 32 caracteres)
+- [ ] `REGISTRATION_ENABLED=false` (creer les comptes manuellement ou via admin panel)
+- [ ] `ALLOWED_ORIGINS` restreint au domaine de production uniquement
+- [ ] SSL/TLS actif via Let's Encrypt (pas de HTTP en production)
+- [ ] Le fichier `.env` n'est **jamais** commite dans le repo
+- [ ] Acces SSH au VPS via cle uniquement (desactiver l'auth par mot de passe)
+
+### Contraintes importantes
+
+| Contrainte | Detail |
+|------------|--------|
+| **Single worker** | Le hub WebSocket est en memoire : le backend doit tourner avec `--workers 1`. Pas de scaling horizontal sans pub/sub externe (Redis). |
+| **SQLite** | Base de donnees embarquee, un seul writer a la fois (WAL mode active). Suffisant pour des centaines d'utilisateurs simultanes, pas pour des milliers. |
+| **100 participants max** | Limite par session dans `hub.py`. Modifiable mais a tester avec la charge reseau. |
+| **Uploads locaux** | Les images sont stockees dans le volume Docker. Pas de CDN. Le volume doit etre sauvegarde. |
+
+### Nginx et CSP
+
+La config nginx de production (`nginx.prod.conf`) inclut :
+
+- **Rate limiting** : 10 req/s avec burst de 20 sur `/api/`
+- **CSP** : `connect-src 'self' wss:` (uniquement `wss:` en production avec SSL)
+- **HSTS** : force HTTPS pendant 1 an
+- **Gzip** : compression des assets statiques
+
+> **Note** : en production avec SSL, la directive CSP `connect-src` doit contenir `wss:` (pas `ws:`). La config dev utilise `ws: wss:` pour les deux protocoles.
+
+### Backup automatise (recommande)
+
+Ajouter un cron pour sauvegarder la base quotidiennement :
+
+```bash
+echo "0 2 * * * docker cp quizforge-backend-1:/app/data/quizforge.db /opt/backups/quizforge_\$(date +\%Y\%m\%d).db && find /opt/backups -name 'quizforge_*.db' -mtime +30 -delete" | sudo crontab -
+```
+
+Cela garde les 30 derniers jours de backups.
 
 ## Variables d'environnement
 

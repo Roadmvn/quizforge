@@ -146,3 +146,38 @@ conn.close()
 print(\"OK\")
 "'
 ```
+
+## Troubleshooting
+
+### Le participant voit "En attente de l'hote" alors que la partie est lancee
+
+**Cause** : le navigateur mobile bloque la connexion WebSocket (CSP ou probleme reseau).
+
+**Solutions** :
+1. Verifier que `nginx.conf` contient `connect-src 'self' ws: wss:` dans le header CSP
+2. En local, s'assurer que l'IP LAN est dans `ALLOWED_ORIGINS`
+3. Demander au participant de recharger la page — la reconnexion automatique reprendra la partie en cours
+
+### Un participant est deconnecte en pleine partie
+
+Le systeme gere automatiquement la reconnexion :
+- **20 tentatives** de reconnexion avec backoff exponentiel (1s → 10s)
+- Les credentials sont sauvegardes en `localStorage` (survit a la fermeture d'onglet)
+- En cas d'echec total, le participant peut aller sur `/join/<CODE>` et cliquer **"Reprendre la partie"**
+
+### Le QR code pointe vers localhost au lieu de l'IP
+
+En local, ouvrir l'app depuis `http://<IP_LAN>:8080` et non `http://localhost:8080`. Le QR code utilise `window.location.origin`.
+
+En production, le QR code utilise le domaine configure.
+
+### Nginx marque "unhealthy" mais fonctionne
+
+Le healthcheck Docker de nginx peut echouer meme si le service fonctionne. Cela n'impacte pas le fonctionnement. Verifier avec `curl -s http://localhost:8080` pour confirmer.
+
+### Les scores ne se mettent pas a jour
+
+Les scores sont calcules cote serveur uniquement. Verifier :
+1. Que le backend est bien lance (`docker compose logs -f backend`)
+2. Que la connexion WebSocket est active (point vert dans le header du participant)
+3. Que le timer n'est pas expire (la reponse doit etre envoyee avant la fin)

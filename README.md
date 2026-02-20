@@ -101,6 +101,40 @@ quizforge/
 └── nginx.prod.conf       # Nginx prod (SSL, HSTS, gzip)
 ```
 
+## Architecture WebSocket
+
+QuizForge utilise un hub WebSocket en memoire pour la synchronisation en temps reel entre l'admin et les participants.
+
+### Flux de connexion
+
+1. Le client ouvre une connexion WebSocket vers `/ws/session/{session_id}`
+2. Le client envoie un message `auth` avec son role (`admin` ou `participant`) et ses credentials
+3. Le serveur repond `auth_ok` si l'authentification reussit
+4. Les messages sont ensuite echanges en JSON avec un champ `type` pour le routage
+
+### Reconnexion automatique
+
+- **20 tentatives** avec backoff exponentiel (1s → 10s max)
+- Les credentials participant sont stockes en `localStorage` pour survivre a la fermeture d'onglet
+- Un participant deconnecte peut **rejoindre a tout moment** pendant la partie (le backend accepte le rejoin avec le meme nickname)
+- Le late-joiner recoit automatiquement : la question en cours avec le temps ecoule, et son eventuelle reponse precedente
+
+### Contraintes
+
+- Le hub est un **singleton en memoire** : le backend doit tourner avec **un seul worker** (`--workers 1`)
+- Scalabilite horizontale necessite un pub/sub externe (Redis, etc.)
+- Maximum **100 participants** par session (configurable dans `hub.py`)
+
+## Securite
+
+- **JWT** : tokens signes avec PyJWT + bcrypt pour le hashing des mots de passe, expiration 2h
+- **CORS** : origines controlees via `ALLOWED_ORIGINS`
+- **CSP** : Content-Security-Policy appliquee par nginx (incluant `ws:`/`wss:` pour les WebSocket)
+- **Rate limiting** : nginx limite les requetes sur `/api/` (10 req/s burst 20)
+- **Upload images** : validation Pillow (format + taille), 5 Mo max
+- **Scores** : calcul serveur uniquement, mise a jour atomique en SQL (anti-triche)
+- **Anti-injection CSV** : les exports CSV echappent les caracteres speciaux
+
 ## Licence
 
 MIT
