@@ -416,7 +416,7 @@ export default function SessionControl() {
                       <img
                         src={qrData.qr_base64}
                         alt="QR Code"
-                        className={`${isFullscreen ? 'w-72 h-72' : 'w-56 h-56'}`}
+                        className={`${isFullscreen ? 'w-96 h-96' : 'w-80 h-80'}`}
                         style={{ imageRendering: 'pixelated' }}
                       />
                     </div>
@@ -437,12 +437,12 @@ export default function SessionControl() {
                 <div className="flex flex-col items-center gap-4">
                   <p className="text-[10px] text-[#6b6b80] uppercase tracking-[0.25em] font-bold">Code d'acces</p>
 
-                  {/* Individual letter boxes */}
-                  <div className="flex gap-2">
+                  {/* Individual letter boxes - compact */}
+                  <div className="flex gap-1.5">
                     {session.code.split('').map((char, i) => (
                       <div
                         key={i}
-                        className={`${isFullscreen ? 'w-16 h-20 text-4xl' : 'w-12 h-16 text-3xl'} rounded-xl flex items-center justify-center font-mono font-black text-white transition-all duration-300`}
+                        className={`${isFullscreen ? 'w-11 h-14 text-2xl' : 'w-9 h-12 text-xl'} rounded-lg flex items-center justify-center font-mono font-black text-white transition-all duration-300`}
                         style={{
                           background: 'rgba(124, 92, 252, 0.08)',
                           border: '1px solid rgba(124, 92, 252, 0.2)',
