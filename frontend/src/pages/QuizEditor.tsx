@@ -172,254 +172,550 @@ export default function QuizEditor() {
     }
   };
 
-  const colors = [
-    'bg-red-500/15 border-red-500/30 hover:border-red-500/50',
-    'bg-blue-500/15 border-blue-500/30 hover:border-blue-500/50',
-    'bg-yellow-500/15 border-yellow-500/30 hover:border-yellow-500/50',
-    'bg-green-500/15 border-green-500/30 hover:border-green-500/50',
+  const answerAccents = [
+    { bg: 'rgba(239,68,68,0.05)', border: 'rgba(239,68,68,0.12)', hoverBorder: 'rgba(239,68,68,0.35)', glow: 'rgba(239,68,68,0.08)', dot: '#ef4444' },
+    { bg: 'rgba(96,165,250,0.05)', border: 'rgba(96,165,250,0.12)', hoverBorder: 'rgba(96,165,250,0.35)', glow: 'rgba(96,165,250,0.08)', dot: '#60a5fa' },
+    { bg: 'rgba(251,191,36,0.05)', border: 'rgba(251,191,36,0.12)', hoverBorder: 'rgba(251,191,36,0.35)', glow: 'rgba(251,191,36,0.08)', dot: '#fbbf24' },
+    { bg: 'rgba(52,211,153,0.05)', border: 'rgba(52,211,153,0.12)', hoverBorder: 'rgba(52,211,153,0.35)', glow: 'rgba(52,211,153,0.08)', dot: '#34d399' },
+    { bg: 'rgba(168,85,247,0.05)', border: 'rgba(168,85,247,0.12)', hoverBorder: 'rgba(168,85,247,0.35)', glow: 'rgba(168,85,247,0.08)', dot: '#a855f7' },
+    { bg: 'rgba(244,114,182,0.05)', border: 'rgba(244,114,182,0.12)', hoverBorder: 'rgba(244,114,182,0.35)', glow: 'rgba(244,114,182,0.08)', dot: '#f472b6' },
   ];
+
+  const inputClass = "w-full px-4 py-3.5 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl text-white placeholder-[#4a4a64] focus:outline-none focus:border-[rgba(124,92,252,0.5)] focus:bg-[rgba(255,255,255,0.06)] focus:shadow-[0_0_0_3px_rgba(124,92,252,0.12),0_0_20px_rgba(124,92,252,0.08)] transition-all duration-300";
 
   if (loadingQuiz) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="spinner-premium w-10 h-10" />
+          <p className="text-[#8888a0] text-sm animate-pulse">Chargement du quiz...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate('/dashboard')} className="text-slate-400 hover:text-slate-100 text-sm transition flex items-center gap-1.5">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          Retour
+    <div className="animate-in">
+      {/* Premium header bar */}
+      <div
+        className="rounded-2xl mb-8 p-5 flex items-center justify-between"
+        style={{
+          background: 'rgba(15, 15, 35, 0.6)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(124, 92, 252, 0.1)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+        }}
+      >
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2 text-[#8888a0] hover:text-white transition-all duration-200 group"
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-105"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </div>
+          <span className="text-sm font-medium hidden sm:inline">Retour</span>
         </button>
-        <h1 className="text-lg font-semibold text-white">{isNew ? 'Nouveau Quiz' : 'Modifier le Quiz'}</h1>
+
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, #7c5cfc 0%, #a855f7 100%)',
+              boxShadow: '0 0 20px rgba(124,92,252,0.3), 0 4px 12px rgba(124,92,252,0.2)',
+            }}
+          >
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white tracking-tight">
+              {isNew ? 'Nouveau Quiz' : 'Modifier le Quiz'}
+            </h1>
+            <p className="text-[10px] text-[#4a4a64] uppercase tracking-[0.2em] font-medium">
+              {questions.length} question{questions.length > 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+
         <button
           onClick={save}
           disabled={saving || !title.trim()}
-          className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl text-sm font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
+          className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed btn-glow"
+          style={{
+            background: 'linear-gradient(135deg, #7c5cfc 0%, #a855f7 100%)',
+            boxShadow: '0 0 25px rgba(124,92,252,0.25), 0 4px 15px rgba(124,92,252,0.2)',
+          }}
+          onMouseOver={(e) => { if (!saving) { e.currentTarget.style.boxShadow = '0 0 40px rgba(124,92,252,0.4), 0 6px 20px rgba(124,92,252,0.3)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}}
+          onMouseOut={(e) => { e.currentTarget.style.boxShadow = '0 0 25px rgba(124,92,252,0.25), 0 4px 15px rgba(124,92,252,0.2)'; e.currentTarget.style.transform = 'translateY(0)'; }}
         >
           {saving ? (
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+              <div className="spinner-premium w-4 h-4" />
               Enregistrement...
             </span>
-          ) : 'Enregistrer'}
+          ) : (
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Enregistrer
+            </span>
+          )}
         </button>
       </div>
 
       <div className="max-w-3xl mx-auto space-y-6">
+        {/* Error banner */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm flex items-center justify-between">
-            <span>{error}</span>
-            <button onClick={() => setError('')} className="text-red-400 hover:text-red-300 ml-4">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <div
+            className="rounded-xl p-4 flex items-center justify-between animate-in"
+            style={{
+              background: 'rgba(248,113,113,0.06)',
+              border: '1px solid rgba(248,113,113,0.2)',
+              boxShadow: '0 0 30px rgba(248,113,113,0.06)',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(248,113,113,0.12)' }}>
+                <svg className="w-4 h-4 text-[#f87171]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <span className="text-sm text-[#f87171]">{error}</span>
+            </div>
+            <button
+              onClick={() => setError('')}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[#f87171] hover:bg-[rgba(248,113,113,0.1)] transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         )}
 
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Titre du quiz"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-transparent text-2xl font-bold text-white placeholder-slate-600 border-b-2 border-slate-700 focus:border-indigo-500 pb-3 focus:outline-none transition"
-          />
-          <input
-            type="text"
-            placeholder="Description (optionnel)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-          />
+        {/* Title & Description card */}
+        <div
+          className="rounded-2xl p-6 space-y-5 glow-card stagger-1"
+          style={{
+            background: 'rgba(15, 15, 35, 0.6)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(124, 92, 252, 0.1)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+          }}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(124,92,252,0.12)', border: '1px solid rgba(124,92,252,0.15)' }}
+            >
+              <svg className="w-4 h-4 text-[#7c5cfc]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+              </svg>
+            </div>
+            <div>
+              <span className="text-sm font-semibold text-white">Informations du quiz</span>
+              <p className="text-[10px] text-[#4a4a64] uppercase tracking-[0.15em]">Titre et description</p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[#8888a0] mb-2 uppercase tracking-[0.15em]">Titre</label>
+            <input
+              type="text"
+              placeholder="Titre du quiz"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={inputClass + ' text-lg font-semibold'}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#8888a0] mb-2 uppercase tracking-[0.15em]">Description</label>
+            <input
+              type="text"
+              placeholder="Description (optionnel)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={inputClass}
+            />
+          </div>
         </div>
 
-        {questions.map((q, qi) => (
-          <div key={qi} className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                  {qi + 1}
-                </span>
-                <span className="text-sm font-medium text-slate-300">Question</span>
+        {/* Questions */}
+        {questions.map((q, qi) => {
+          return (
+            <div
+              key={qi}
+              className="rounded-2xl overflow-hidden glow-card"
+              style={{
+                background: 'rgba(15, 15, 35, 0.6)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(124, 92, 252, 0.08)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+                animationDelay: `${0.05 + qi * 0.07}s`,
+              }}
+            >
+              {/* Question header with gradient accent bar */}
+              <div
+                className="px-6 py-4 flex items-center justify-between"
+                style={{
+                  borderBottom: '1px solid rgba(124, 92, 252, 0.08)',
+                  background: 'rgba(124, 92, 252, 0.03)',
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm"
+                    style={{
+                      background: 'linear-gradient(135deg, #7c5cfc 0%, #a855f7 100%)',
+                      boxShadow: '0 0 20px rgba(124,92,252,0.3), 0 4px 10px rgba(124,92,252,0.2)',
+                    }}
+                  >
+                    {qi + 1}
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-white">Question {qi + 1}</span>
+                    <p className="text-[10px] text-[#4a4a64] uppercase tracking-[0.15em]">
+                      {q.answers.filter(a => a.text.trim()).length} reponse{q.answers.filter(a => a.text.trim()).length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Move buttons */}
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => moveQuestion(qi, 'up')}
+                      disabled={qi === 0}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8888a0] hover:text-[#7c5cfc] transition-all disabled:opacity-20 disabled:hover:text-[#8888a0]"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                      title="Monter"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => moveQuestion(qi, 'down')}
+                      disabled={qi === questions.length - 1}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8888a0] hover:text-[#7c5cfc] transition-all disabled:opacity-20 disabled:hover:text-[#8888a0]"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                      title="Descendre"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Timer */}
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#7c5cfc]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <input
+                      type="number"
+                      min={5}
+                      max={300}
+                      value={q.time_limit}
+                      onChange={(e) => updateQuestion(qi, { time_limit: Number(e.target.value) })}
+                      className="w-12 bg-transparent text-[#e8e8f0] text-sm font-medium focus:outline-none text-center"
+                    />
+                    <span className="text-[10px] text-[#4a4a64] font-semibold uppercase">sec</span>
+                  </div>
+
+                  {/* Delete question */}
+                  {questions.length > 1 && (
+                    <button
+                      onClick={() => removeQuestion(qi)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8888a0] hover:text-[#f87171] transition-all"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                      title="Supprimer la question"
+                      onMouseOver={(e) => { e.currentTarget.style.borderColor = 'rgba(248,113,113,0.3)'; e.currentTarget.style.background = 'rgba(248,113,113,0.06)'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-0.5">
+              {/* Question body */}
+              <div className="p-6 space-y-5">
+                <textarea
+                  placeholder="Entrez votre question..."
+                  value={q.text}
+                  onChange={(e) => updateQuestion(qi, { text: e.target.value })}
+                  rows={2}
+                  className="w-full px-4 py-3.5 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl text-white placeholder-[#4a4a64] focus:outline-none focus:border-[rgba(124,92,252,0.5)] focus:bg-[rgba(255,255,255,0.06)] focus:shadow-[0_0_0_3px_rgba(124,92,252,0.12),0_0_20px_rgba(124,92,252,0.08)] resize-none transition-all duration-300 text-[15px]"
+                />
+
+                {/* Image area */}
+                {q.image_url ? (
+                  <div className="relative group rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <img
+                      src={q.image_url}
+                      alt="Question"
+                      className="max-h-80 w-full object-contain bg-[rgba(0,0,0,0.2)] cursor-pointer"
+                      onClick={() => setPreviewImage(q.image_url!)}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                      <button
+                        onClick={() => setPreviewImage(q.image_url!)}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-white transition-all"
+                        style={{ background: 'rgba(124,92,252,0.8)', backdropFilter: 'blur(10px)', boxShadow: '0 4px 15px rgba(124,92,252,0.3)' }}
+                        title="Apercu en grand"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => updateQuestion(qi, { image_url: null })}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-white transition-all"
+                        style={{ background: 'rgba(248,113,113,0.8)', backdropFilter: 'blur(10px)', boxShadow: '0 4px 15px rgba(248,113,113,0.3)' }}
+                        title="Supprimer l'image"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <button
-                    onClick={() => moveQuestion(qi, 'up')}
-                    disabled={qi === 0}
-                    className="p-1.5 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition disabled:opacity-20 disabled:hover:text-slate-500 disabled:hover:bg-transparent"
-                    title="Monter"
+                    type="button"
+                    onClick={() => fileInputRefs.current.get(qi)?.click()}
+                    className="w-full rounded-xl p-5 transition-all duration-300 flex flex-col items-center justify-center gap-3 group"
+                    style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '2px dashed rgba(124,92,252,0.12)',
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.35)'; e.currentTarget.style.background = 'rgba(124,92,252,0.04)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.12)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+                      style={{ background: 'rgba(124,92,252,0.08)', border: '1px solid rgba(124,92,252,0.15)' }}
+                    >
+                      <svg className="w-5 h-5 text-[#7c5cfc]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-[#4a4a64] group-hover:text-[#8888a0] transition-colors">Ajouter une image</span>
                   </button>
-                  <button
-                    onClick={() => moveQuestion(qi, 'down')}
-                    disabled={qi === questions.length - 1}
-                    className="p-1.5 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition disabled:opacity-20 disabled:hover:text-slate-500 disabled:hover:bg-transparent"
-                    title="Descendre"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                  </button>
+                )}
+                <input
+                  ref={(el) => { if (el) fileInputRefs.current.set(qi, el); }}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadImage(qi, file).catch(() => setError('Echec de l\'upload de l\'image'));
+                    e.target.value = '';
+                  }}
+                />
+
+                {/* Answers label */}
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[rgba(124,92,252,0.12)] to-transparent" />
+                  <span className="text-[10px] font-bold text-[#4a4a64] uppercase tracking-[0.2em]">Reponses</span>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[rgba(124,92,252,0.12)] to-transparent" />
                 </div>
-                <label className="text-sm text-slate-400 flex items-center gap-1.5">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <input
-                    type="number"
-                    min={5}
-                    max={300}
-                    value={q.time_limit}
-                    onChange={(e) => updateQuestion(qi, { time_limit: Number(e.target.value) })}
-                    className="w-16 px-2 py-1 bg-slate-900/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-indigo-500 transition"
-                  />
-                  s
-                </label>
-                {questions.length > 1 && (
+
+                {/* Answers grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {q.answers.map((a, ai) => {
+                    const color = answerAccents[ai % answerAccents.length];
+                    const isCorrect = a.is_correct;
+                    return (
+                      <div
+                        key={ai}
+                        onClick={() => setCorrectAnswer(qi, ai)}
+                        className="rounded-xl p-4 cursor-pointer transition-all duration-300 relative group"
+                        style={{
+                          background: isCorrect ? 'rgba(52,211,153,0.06)' : color.bg,
+                          border: `1px solid ${isCorrect ? 'rgba(52,211,153,0.3)' : color.border}`,
+                          boxShadow: isCorrect ? '0 0 20px rgba(52,211,153,0.08), inset 0 1px 0 rgba(52,211,153,0.1)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                        }}
+                        onMouseOver={(e) => {
+                          if (!isCorrect) {
+                            e.currentTarget.style.borderColor = color.hoverBorder;
+                            e.currentTarget.style.boxShadow = `0 0 20px ${color.glow}, inset 0 1px 0 rgba(255,255,255,0.05)`;
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!isCorrect) {
+                            e.currentTarget.style.borderColor = color.border;
+                            e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.03)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }
+                        }}
+                      >
+                        {q.answers.length > 2 && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeAnswer(qi, ai); }}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center justify-center text-[#4a4a64] hover:text-[#f87171] opacity-0 group-hover:opacity-100 transition-all"
+                            style={{ background: 'rgba(0,0,0,0.3)' }}
+                            title="Supprimer cette reponse"
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+
+                        <div className="flex items-center gap-2.5 mb-2.5">
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300"
+                            style={{
+                              background: isCorrect ? '#34d399' : 'transparent',
+                              border: `2px solid ${isCorrect ? '#34d399' : 'rgba(255,255,255,0.15)'}`,
+                              boxShadow: isCorrect ? '0 0 12px rgba(52,211,153,0.4)' : 'none',
+                            }}
+                          >
+                            {isCorrect && (
+                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="w-2 h-2 rounded-full"
+                              style={{ background: isCorrect ? '#34d399' : color.dot, boxShadow: `0 0 6px ${isCorrect ? 'rgba(52,211,153,0.5)' : color.glow}` }}
+                            />
+                            <span className="text-[10px] text-[#8888a0] font-semibold uppercase tracking-wider">
+                              {isCorrect ? 'Bonne reponse' : `Option ${ai + 1}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        <input
+                          type="text"
+                          placeholder={`Reponse ${ai + 1}`}
+                          value={a.text}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            updateAnswer(qi, ai, { text: e.target.value });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full bg-transparent text-[#e8e8f0] placeholder-[#3d3d52] focus:outline-none text-sm font-medium"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Add answer button */}
+                {q.answers.length < 6 && (
                   <button
-                    onClick={() => removeQuestion(qi)}
-                    className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                    title="Supprimer la question"
+                    onClick={() => addAnswer(qi)}
+                    className="w-full py-3 rounded-xl text-xs font-semibold text-[#4a4a64] hover:text-[#7c5cfc] transition-all duration-300 flex items-center justify-center gap-2 group"
+                    style={{
+                      border: '1px dashed rgba(124,92,252,0.12)',
+                      background: 'rgba(255,255,255,0.01)',
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.3)'; e.currentTarget.style.background = 'rgba(124,92,252,0.03)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.12)'; e.currentTarget.style.background = 'rgba(255,255,255,0.01)'; }}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Ajouter une reponse
                   </button>
                 )}
               </div>
             </div>
+          );
+        })}
 
-            <textarea
-              placeholder="Entrez votre question..."
-              value={q.text}
-              onChange={(e) => updateQuestion(qi, { text: e.target.value })}
-              rows={2}
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none transition"
-            />
-
-            {q.image_url ? (
-              <div className="relative group">
-                <img src={q.image_url} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-slate-900/50 cursor-pointer" onClick={() => setPreviewImage(q.image_url!)} />
-                <div className="absolute top-2 right-2 flex gap-2">
-                  <button
-                    onClick={() => setPreviewImage(q.image_url!)}
-                    className="w-7 h-7 bg-slate-900/80 hover:bg-indigo-500/80 rounded-full flex items-center justify-center text-white transition opacity-0 group-hover:opacity-100"
-                    title="Apercu en grand"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
-                  </button>
-                  <button
-                    onClick={() => updateQuestion(qi, { image_url: null })}
-                    className="w-7 h-7 bg-slate-900/80 hover:bg-red-500/80 rounded-full flex items-center justify-center text-white transition opacity-0 group-hover:opacity-100"
-                    title="Supprimer l'image"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRefs.current.get(qi)?.click()}
-                className="w-full border border-dashed border-slate-700/50 rounded-xl p-4 hover:border-indigo-500/50 transition-all flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                <span className="text-sm text-slate-500">Ajouter une image</span>
-              </button>
-            )}
-            <input
-              ref={(el) => { if (el) fileInputRefs.current.set(qi, el); }}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) uploadImage(qi, file).catch(() => setError('Echec de l\'upload de l\'image'));
-                e.target.value = '';
-              }}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {q.answers.map((a, ai) => (
-                <div
-                  key={ai}
-                  onClick={() => setCorrectAnswer(qi, ai)}
-                  className={`border rounded-xl p-3 cursor-pointer transition-all duration-200 relative group ${
-                    a.is_correct
-                      ? 'bg-green-500/20 border-green-500 ring-2 ring-green-500/50 shadow-lg shadow-green-500/10'
-                      : colors[ai % colors.length] || 'bg-slate-700/50 border-slate-600'
-                  }`}
-                >
-                  {q.answers.length > 2 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); removeAnswer(qi, ai); }}
-                      className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-slate-900/80 text-slate-500 hover:text-red-400 hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
-                      title="Supprimer cette reponse"
-                    >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                  )}
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      a.is_correct ? 'border-green-400 bg-green-400' : 'border-slate-500'
-                    }`}>
-                      {a.is_correct && (
-                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                      )}
-                    </div>
-                    <span className="text-xs text-slate-500">Reponse {ai + 1}</span>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder={`Reponse ${ai + 1}`}
-                    value={a.text}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      updateAnswer(qi, ai, { text: e.target.value });
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full bg-transparent text-white placeholder-slate-500 focus:outline-none text-sm"
-                  />
-                </div>
-              ))}
-            </div>
-
-            {q.answers.length < 6 && (
-              <button
-                onClick={() => addAnswer(qi)}
-                className="w-full py-2 border border-dashed border-slate-700/50 rounded-lg text-xs text-slate-500 hover:text-indigo-400 hover:border-indigo-500/50 transition-all flex items-center justify-center gap-1.5"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                Ajouter une reponse
-              </button>
-            )}
-          </div>
-        ))}
-
+        {/* Add question button */}
         <button
           onClick={addQuestion}
-          className="w-full py-4 border-2 border-dashed border-slate-700/50 rounded-xl text-slate-400 hover:text-indigo-400 hover:border-indigo-500/50 transition-all duration-300 flex items-center justify-center gap-2"
+          className="w-full py-6 rounded-2xl transition-all duration-300 flex flex-col items-center justify-center gap-3 group glow-card"
+          style={{
+            background: 'rgba(15, 15, 35, 0.4)',
+            border: '2px dashed rgba(124, 92, 252, 0.15)',
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(124,92,252,0.4)';
+            e.currentTarget.style.background = 'rgba(124,92,252,0.06)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 30px rgba(124,92,252,0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(124,92,252,0.15)';
+            e.currentTarget.style.background = 'rgba(15,15,35,0.4)';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-          Ajouter une question
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+            style={{
+              background: 'linear-gradient(135deg, rgba(124,92,252,0.15), rgba(168,85,247,0.15))',
+              border: '1px solid rgba(124,92,252,0.2)',
+            }}
+          >
+            <svg className="w-6 h-6 text-[#7c5cfc] transition-transform duration-300 group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </div>
+          <div className="text-center">
+            <span className="text-sm font-semibold text-[#8888a0] group-hover:text-white transition-colors">Ajouter une question</span>
+            <p className="text-[10px] text-[#4a4a64] mt-0.5 uppercase tracking-[0.15em]">Question {questions.length + 1}</p>
+          </div>
         </button>
+
+        {/* Bottom spacer */}
+        <div className="h-8" />
       </div>
 
+      {/* Image preview modal */}
       {previewImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-8 cursor-pointer"
+          className="fixed inset-0 z-50 flex items-center justify-center p-8 cursor-pointer"
+          style={{ background: 'rgba(6,6,14,0.9)', backdropFilter: 'blur(20px)' }}
           onClick={() => setPreviewImage(null)}
         >
           <button
-            className="absolute top-4 right-4 w-10 h-10 bg-slate-800/80 hover:bg-slate-700 rounded-full flex items-center justify-center text-white transition"
+            className="absolute top-6 right-6 w-12 h-12 rounded-xl flex items-center justify-center text-white transition-all"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(10px)',
+            }}
             onClick={() => setPreviewImage(null)}
+            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(248,113,113,0.2)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.3)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
           <img
             src={previewImage}
             alt="Apercu"
-            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+            className="max-w-full max-h-full object-contain rounded-2xl"
+            style={{ boxShadow: '0 25px 80px rgba(0,0,0,0.5), 0 0 40px rgba(124,92,252,0.08)' }}
             onClick={(e) => e.stopPropagation()}
           />
         </div>

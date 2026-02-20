@@ -173,12 +173,21 @@ export default function SessionControl() {
     }
   };
 
+  /* ---------- LOADING STATE ---------- */
   if (!session) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[60vh]">
-        <div className="flex items-center gap-3 text-slate-400">
-          <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-          Chargement...
+        <div
+          className="animate-in flex flex-col items-center gap-4 px-10 py-8 rounded-2xl"
+          style={{
+            background: 'rgba(15, 15, 35, 0.6)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(124, 92, 252, 0.08)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+          }}
+        >
+          <div className="spinner-premium" />
+          <span className="text-[#8888a0] text-sm font-medium tracking-wide">Chargement de la session...</span>
         </div>
       </div>
     );
@@ -187,89 +196,321 @@ export default function SessionControl() {
   const totalParticipants = session.participants.length;
   const isLastQuestion = questionIdx >= totalQuestions - 1;
 
+  /* ====================================================================
+     GLASS CARD STYLE CONSTANTS
+     ==================================================================== */
+  const glassCard: React.CSSProperties = {
+    background: 'rgba(15, 15, 35, 0.6)',
+    backdropFilter: 'blur(20px)',
+    border: '1px solid rgba(124, 92, 252, 0.08)',
+    boxShadow: '0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+  };
+
+  const glassCardStrong: React.CSSProperties = {
+    background: 'rgba(15, 15, 35, 0.75)',
+    backdropFilter: 'blur(24px)',
+    border: '1px solid rgba(124, 92, 252, 0.12)',
+    boxShadow: '0 12px 48px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
+  };
+
+  const gradientBtnPurple: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #7c5cfc, #a855f7)',
+    boxShadow: '0 0 25px rgba(124,92,252,0.25), 0 4px 15px rgba(124,92,252,0.2)',
+  };
+
+  const gradientBtnGreen: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #34d399, #10b981)',
+    boxShadow: '0 0 25px rgba(52,211,153,0.25), 0 4px 15px rgba(52,211,153,0.2)',
+  };
+
+  const gradientBtnYellow: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+    boxShadow: '0 0 25px rgba(251,191,36,0.25), 0 4px 15px rgba(251,191,36,0.2)',
+  };
+
+  const gradientBtnRed: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #f87171, #ef4444)',
+    boxShadow: '0 0 25px rgba(248,113,113,0.25), 0 4px 15px rgba(248,113,113,0.2)',
+  };
+
+  const iconBadgePurple: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #7c5cfc 0%, #a855f7 100%)',
+    boxShadow: '0 0 20px rgba(124,92,252,0.3)',
+  };
+
+  const iconBadgeGreen: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
+    boxShadow: '0 0 20px rgba(52,211,153,0.3)',
+  };
+
+  /* Hover helper: amplify glow + lift */
+  const hoverLift = (e: React.MouseEvent<HTMLElement>, baseBoxShadow: string) => {
+    const el = e.currentTarget;
+    el.style.transform = 'translateY(-2px)';
+    el.style.boxShadow = baseBoxShadow.replace(/0\.25/g, '0.5').replace(/0\.2/g, '0.4');
+  };
+  const hoverReset = (e: React.MouseEvent<HTMLElement>, baseBoxShadow: string) => {
+    const el = e.currentTarget;
+    el.style.transform = 'translateY(0)';
+    el.style.boxShadow = baseBoxShadow;
+  };
+
+  /* Left-border colors for answer cards */
+  const answerBorderColors = ['#ef4444', '#60a5fa', '#fbbf24', '#34d399'];
+  const answerBgColors = [
+    'rgba(239,68,68,0.05)',
+    'rgba(96,165,250,0.05)',
+    'rgba(251,191,36,0.05)',
+    'rgba(52,211,153,0.05)',
+  ];
+
   return (
-    <div ref={containerRef} className={`${isFullscreen ? 'bg-slate-950 min-h-screen flex flex-col overflow-auto' : 'p-6'}`}>
-      <div className={`flex items-center justify-between ${isFullscreen ? 'px-6 py-3 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10' : 'mb-6'}`}>
-        <button onClick={() => navigate('/dashboard')} className="text-slate-400 hover:text-slate-100 text-sm transition flex items-center gap-1.5">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+    <div ref={containerRef} className={`animate-in ${isFullscreen ? 'bg-[#06060e] min-h-screen flex flex-col overflow-auto' : 'p-6'}`}>
+
+      {/* ================================================================
+          TOP BAR
+          ================================================================ */}
+      <div
+        className={`flex items-center justify-between rounded-2xl ${isFullscreen ? 'mx-6 mt-4 mb-2 px-5 py-3 sticky top-4 z-10' : 'mb-6 px-5 py-3'}`}
+        style={glassCard}
+      >
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2.5 text-sm font-medium text-[#8888a0] transition-all duration-300"
+          style={{ cursor: 'pointer' }}
+          onMouseOver={(e) => { e.currentTarget.style.color = '#e8e8f0'; }}
+          onMouseOut={(e) => { e.currentTarget.style.color = '#8888a0'; }}
+        >
+          <span
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={iconBadgePurple}
+          >
+            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </span>
           Tableau de bord
         </button>
+
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
-            <span className="text-sm text-slate-400">{connected ? 'Connecte' : 'Deconnecte'}</span>
+          {/* Connection indicator glass badge */}
+          <div
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full"
+            style={{
+              background: 'rgba(15, 15, 35, 0.5)',
+              backdropFilter: 'blur(12px)',
+              border: connected ? '1px solid rgba(52,211,153,0.15)' : '1px solid rgba(248,113,113,0.15)',
+            }}
+          >
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{
+                background: connected ? '#34d399' : '#f87171',
+                boxShadow: connected ? '0 0 8px rgba(52,211,153,0.6)' : '0 0 8px rgba(248,113,113,0.6)',
+                animation: connected ? 'pulse 2s infinite' : 'none',
+              }}
+            />
+            <span className="text-xs font-medium" style={{ color: connected ? '#34d399' : '#f87171' }}>
+              {connected ? 'Connecte' : 'Deconnecte'}
+            </span>
           </div>
+
+          {/* Fullscreen button in mini-card */}
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 text-slate-400 hover:text-slate-100 transition rounded-lg hover:bg-slate-700/50"
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300"
+            style={{
+              background: 'rgba(15, 15, 35, 0.5)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(124,92,252,0.1)',
+            }}
             title={isFullscreen ? 'Quitter le plein ecran' : 'Plein ecran'}
+            onMouseOver={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.3)'; e.currentTarget.style.color = '#e8e8f0'; }}
+            onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.1)'; e.currentTarget.style.color = '#8888a0'; }}
           >
             {isFullscreen ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9L4 4m0 0v5m0-5h5m6 6l5 5m0 0v-5m0 5h-5m-6 0l-5 5m0 0v-5m0 5h5m6-6l5-5m0 0v5m0-5h-5" /></svg>
+              <svg className="w-4 h-4 text-[#8888a0]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9L4 4m0 0v5m0-5h5m6 6l5 5m0 0v-5m0 5h-5m-6 0l-5 5m0 0v-5m0 5h5m6-6l5-5m0 0v5m0-5h-5" /></svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-7 14l-5 5m0 0h4m-4 0v-4m16 4l-5-5m5 5v-4m0 4h-4" /></svg>
+              <svg className="w-4 h-4 text-[#8888a0]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-7 14l-5 5m0 0h4m-4 0v-4m16 4l-5-5m5 5v-4m0 4h-4" /></svg>
             )}
           </button>
         </div>
       </div>
 
+      {/* ================================================================
+          ERROR BANNER
+          ================================================================ */}
       {error && (
-        <div className={`mb-6 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center justify-between ${isFullscreen ? 'mx-6' : ''}`}>
-          <span>{error}</span>
-          <button onClick={() => setError('')} className="text-red-400 hover:text-red-300 ml-4">
+        <div
+          className={`mb-6 rounded-2xl px-5 py-3.5 flex items-center justify-between ${isFullscreen ? 'mx-6' : ''}`}
+          style={{
+            background: 'rgba(248,113,113,0.06)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(248,113,113,0.15)',
+            boxShadow: '0 8px 32px rgba(248,113,113,0.08), inset 0 1px 0 rgba(255,255,255,0.03)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, #f87171, #ef4444)', boxShadow: '0 0 14px rgba(248,113,113,0.3)' }}
+            >
+              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </span>
+            <span className="text-sm text-[#f87171] font-medium">{error}</span>
+          </div>
+          <button
+            onClick={() => setError('')}
+            className="text-[#f87171] hover:text-[#fca5a5] ml-4 transition"
+          >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
       )}
 
       <div className={isFullscreen ? 'w-full flex-1 flex flex-col px-8 pb-6' : 'max-w-4xl mx-auto'}>
-        {/* LOBBY */}
+
+        {/* ================================================================
+            LOBBY
+            ================================================================ */}
         {gameStatus === 'lobby' && (
           <div className={`text-center space-y-8 ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center' : ''}`}>
-            <h2 className={`${isFullscreen ? 'text-3xl md:text-4xl' : 'text-2xl'} font-bold text-white`}>Salle d'attente</h2>
 
+            {/* Title with gradient icon badge */}
+            <div className="flex items-center justify-center gap-3">
+              <span
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={iconBadgePurple}
+              >
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </span>
+              <h2 className={`${isFullscreen ? 'text-3xl md:text-4xl' : 'text-2xl'} font-bold text-white`}>
+                Salle d'attente
+              </h2>
+            </div>
+
+            {/* QR Code in glass card with purple border glow */}
             {qrData && (
               <div className="inline-block">
-                <div className="bg-white p-5 rounded-2xl shadow-2xl shadow-indigo-500/10">
-                  <img src={qrData.qr_base64} alt="QR Code" className="w-64 h-64" />
+                <div
+                  className="p-5 rounded-2xl"
+                  style={{
+                    background: 'rgba(15, 15, 35, 0.6)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(124, 92, 252, 0.2)',
+                    boxShadow: '0 0 40px rgba(124,92,252,0.12), 0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+                  }}
+                >
+                  <div className="bg-white p-3 rounded-xl">
+                    <img src={qrData.qr_base64} alt="QR Code" className="w-64 h-64" />
+                  </div>
                 </div>
               </div>
             )}
 
-            <div>
-              <p className="text-slate-400 text-sm mb-2">Code d'acces</p>
-              <p className="text-5xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 tracking-widest">
+            {/* Code display - big glass card with gradient text */}
+            <div
+              className="inline-block px-10 py-6 rounded-2xl"
+              style={{
+                ...glassCard,
+                boxShadow: '0 0 50px rgba(124,92,252,0.1), 0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+              }}
+            >
+              <p className="text-[10px] text-[#4a4a64] uppercase tracking-[0.2em] font-medium mb-3">Code d'acces</p>
+              <p
+                className={`${isFullscreen ? 'text-6xl' : 'text-5xl'} font-mono font-black tracking-[0.3em]`}
+                style={{
+                  background: 'linear-gradient(135deg, #7c5cfc, #a855f7)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: 'drop-shadow(0 0 20px rgba(124,92,252,0.3))',
+                }}
+              >
                 {session.code}
               </p>
-              {qrData && <p className="text-slate-500 text-xs mt-2">{qrData.join_url}</p>}
+              {qrData && <p className="text-[#4a4a64] text-xs mt-3">{qrData.join_url}</p>}
             </div>
 
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+            {/* Stats + participants + start */}
+            <div className="rounded-2xl p-6" style={glassCard}>
+
+              {/* Stats cards */}
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
-                  <p className="text-3xl font-bold text-white">{totalParticipants}</p>
-                  <p className="text-xs text-slate-500 mt-1">Joueur{totalParticipants > 1 && 's'} inscrit{totalParticipants > 1 && 's'}</p>
+                {/* Joueurs inscrits */}
+                <div
+                  className="rounded-2xl p-5 text-center"
+                  style={glassCardStrong}
+                >
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <span
+                      className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={iconBadgePurple}
+                    >
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </span>
+                  </div>
+                  <p className={`${isFullscreen ? 'text-4xl' : 'text-3xl'} font-black text-white`}>{totalParticipants}</p>
+                  <p className="text-[10px] text-[#4a4a64] uppercase tracking-[0.2em] font-medium mt-1.5">
+                    Joueur{totalParticipants > 1 && 's'} inscrit{totalParticipants > 1 && 's'}
+                  </p>
                 </div>
-                <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
-                  <p className="text-3xl font-bold text-emerald-400">{onlineCount}</p>
-                  <p className="text-xs text-slate-500 mt-1">En ligne</p>
+
+                {/* En ligne */}
+                <div
+                  className="rounded-2xl p-5 text-center"
+                  style={glassCardStrong}
+                >
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <span
+                      className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={iconBadgeGreen}
+                    >
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M9.172 15.828a5 5 0 010-7.072m5.656 0a5 5 0 010 7.072M12 12h.01" /></svg>
+                    </span>
+                  </div>
+                  <p className={`${isFullscreen ? 'text-4xl' : 'text-3xl'} font-black text-[#34d399]`}>{onlineCount}</p>
+                  <p className="text-[10px] text-[#4a4a64] uppercase tracking-[0.2em] font-medium mt-1.5">En ligne</p>
                 </div>
               </div>
 
-              <p className="text-slate-500 text-xs mb-4">500 a 1000 pts par bonne reponse (bonus rapidite)</p>
+              {/* Points info glass pill */}
+              <div className="flex justify-center mb-5">
+                <span
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium text-[#8888a0]"
+                  style={{
+                    background: 'rgba(15, 15, 35, 0.5)',
+                    border: '1px solid rgba(124,92,252,0.08)',
+                  }}
+                >
+                  <svg className="w-3.5 h-3.5 text-[#7c5cfc]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  500 a 1000 pts par bonne reponse (bonus rapidite)
+                </span>
+              </div>
 
+              {/* Participant chips */}
               <div className="flex flex-wrap gap-2 justify-center mb-6">
                 {session.participants.map((p) => (
-                  <span key={p.id} className="px-3 py-1.5 bg-slate-700/50 border border-slate-600/50 rounded-full text-sm text-slate-300">
+                  <span
+                    key={p.id}
+                    className="px-3.5 py-1.5 rounded-full text-sm font-medium text-white transition-all duration-300"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(124,92,252,0.12), rgba(168,85,247,0.08))',
+                      border: '1px solid rgba(124,92,252,0.18)',
+                      boxShadow: '0 0 12px rgba(124,92,252,0.08)',
+                    }}
+                  >
                     {p.nickname}
                   </span>
                 ))}
               </div>
 
+              {/* Start game button */}
               <button
                 onClick={startGame}
                 disabled={totalParticipants === 0}
-                className="px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 rounded-xl font-semibold text-lg transition-all duration-300 disabled:opacity-50 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30"
+                className={`px-10 py-4 rounded-xl font-bold text-lg text-[#06060e] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed ${isFullscreen ? 'text-xl px-12 py-5' : ''}`}
+                style={gradientBtnGreen}
+                onMouseOver={(e) => { if (totalParticipants > 0) hoverLift(e, gradientBtnGreen.boxShadow as string); }}
+                onMouseOut={(e) => { hoverReset(e, gradientBtnGreen.boxShadow as string); }}
               >
                 Demarrer la partie
               </button>
@@ -277,41 +518,78 @@ export default function SessionControl() {
           </div>
         )}
 
-        {/* ACTIVE / REVEALING */}
+        {/* ================================================================
+            ACTIVE / REVEALING
+            ================================================================ */}
         {(gameStatus === 'active' || gameStatus === 'revealing') && currentQuestion && (
           <div className={`space-y-6 ${isFullscreen ? 'flex-1 flex flex-col' : ''}`}>
+
+            {/* Header row: question badge + answered counter */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className={`bg-indigo-500/20 text-indigo-400 font-medium rounded-full ${isFullscreen ? 'px-5 py-2 text-lg' : 'px-3 py-1 text-sm'}`}>
-                  Question {questionIdx + 1} / {totalQuestions}
-                </span>
-              </div>
-              <div className={`flex items-center gap-2 text-slate-400 ${isFullscreen ? 'text-lg' : 'text-sm'}`}>
-                <svg className={`${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                {answeredCount} / {totalParticipants} ont repondu
+              {/* Question badge with gradient purple glow */}
+              <span
+                className={`font-bold rounded-full text-white ${isFullscreen ? 'px-6 py-2.5 text-lg' : 'px-4 py-1.5 text-sm'}`}
+                style={gradientBtnPurple}
+              >
+                Question {questionIdx + 1} / {totalQuestions}
+              </span>
+
+              {/* Answered counter glass badge */}
+              <div
+                className={`flex items-center gap-2 rounded-full ${isFullscreen ? 'px-5 py-2.5 text-lg' : 'px-4 py-2 text-sm'}`}
+                style={{
+                  background: 'rgba(15, 15, 35, 0.5)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(124,92,252,0.08)',
+                }}
+              >
+                <svg className={`text-[#8888a0] ${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span className="text-[#8888a0] font-medium">{answeredCount} / {totalParticipants} ont repondu</span>
               </div>
             </div>
 
-            <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center p-10 w-full' : 'p-8'}`}>
-              <h2 className={`${isFullscreen ? 'text-4xl md:text-5xl' : 'text-2xl'} font-bold text-white mb-8`}>{currentQuestion.text as string}</h2>
+            {/* Question card - glass-strong */}
+            <div
+              className={`rounded-2xl text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center p-10 w-full' : 'p-8'}`}
+              style={glassCardStrong}
+            >
+              <h2 className={`${isFullscreen ? 'text-4xl md:text-5xl' : 'text-2xl'} font-bold text-white mb-8`}>
+                {currentQuestion.text as string}
+              </h2>
+
               {!!currentQuestion.image_url && (
-                <img src={currentQuestion.image_url as string} alt="Question" className={`${isFullscreen ? 'max-h-[65vh]' : 'max-h-80'} w-full object-contain rounded-xl bg-slate-900/50 mx-auto mb-6`} />
+                <img src={currentQuestion.image_url as string} alt="Question" className={`${isFullscreen ? 'max-h-[65vh]' : 'max-h-80'} w-full object-contain rounded-xl bg-[rgba(255,255,255,0.02)] mx-auto mb-6`} />
               )}
+
+              {/* Answer cards with colored left border */}
               <div className={`grid grid-cols-2 ${isFullscreen ? 'gap-6 w-full' : 'gap-4'}`}>
                 {(currentQuestion.answers as Array<{ id: string; text: string; is_correct?: boolean; order: number }>).map(
                   (a, i) => {
-                    const ansColors = ['bg-red-500/20 border-red-500/30', 'bg-blue-500/20 border-blue-500/30', 'bg-yellow-500/20 border-yellow-500/30', 'bg-green-500/20 border-green-500/30'];
+                    const isCorrectRevealed = revealed && a.is_correct;
                     return (
                       <div
                         key={a.id}
-                        className={`${isFullscreen ? 'p-8 text-2xl' : 'p-4 text-lg'} rounded-xl font-medium border transition-all duration-300 ${ansColors[i] || 'bg-slate-800 border-slate-700'} ${
-                          revealed && a.is_correct ? 'ring-4 ring-green-400/50 border-green-400 shadow-lg shadow-green-500/20' : ''
-                        }`}
+                        className={`${isFullscreen ? 'p-8 text-2xl' : 'p-5 text-lg'} rounded-xl font-semibold text-white transition-all duration-500 text-left`}
+                        style={{
+                          background: isCorrectRevealed
+                            ? 'rgba(52,211,153,0.1)'
+                            : answerBgColors[i] || 'rgba(255,255,255,0.02)',
+                          borderLeft: `4px solid ${answerBorderColors[i] || '#6b6b80'}`,
+                          border: isCorrectRevealed
+                            ? '1px solid rgba(52,211,153,0.3)'
+                            : `1px solid rgba(255,255,255,0.05)`,
+                          borderLeftWidth: '4px',
+                          borderLeftColor: answerBorderColors[i] || '#6b6b80',
+                          boxShadow: isCorrectRevealed
+                            ? '0 0 30px rgba(52,211,153,0.15), inset 0 1px 0 rgba(255,255,255,0.05)'
+                            : '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03)',
+                          backdropFilter: 'blur(12px)',
+                        }}
                       >
                         {a.text}
                         {revealed && a.is_correct && (
-                          <span className="ml-2 inline-flex items-center">
-                            <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-green-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                          <span className="ml-3 inline-flex items-center">
+                            <svg className={`${isFullscreen ? 'w-7 h-7' : 'w-5 h-5'} text-[#34d399]`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                           </span>
                         )}
                       </div>
@@ -321,24 +599,36 @@ export default function SessionControl() {
               </div>
             </div>
 
+            {/* Stats section after reveal */}
             {revealed && stats && (
-              <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-8 w-full' : 'p-6'}`}>
-                {/* Résultats par joueur - section principale */}
+              <div className={`rounded-2xl ${isFullscreen ? 'p-8 w-full' : 'p-6'}`} style={glassCard}>
+
+                {/* Player results */}
                 {playerResults.length > 0 && (
                   <div className={isFullscreen ? 'mb-8' : 'mb-6'}>
+                    {/* Header with stats badges */}
                     <div className={`flex items-center justify-between ${isFullscreen ? 'mb-6' : 'mb-4'}`}>
                       <h3 className={`${isFullscreen ? 'text-xl' : 'text-base'} font-bold text-white`}>Qui a bon ?</h3>
                       <div className="flex items-center gap-3">
-                        <div className={`flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg ${isFullscreen ? 'px-4 py-2' : 'px-3 py-1.5'}`}>
-                          <svg className={`${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} text-emerald-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                          <span className={`${isFullscreen ? 'text-lg' : 'text-sm'} font-bold text-emerald-400`}>{stats.correct_count}</span>
+                        <div
+                          className={`flex items-center gap-2 rounded-xl ${isFullscreen ? 'px-4 py-2.5' : 'px-3 py-1.5'}`}
+                          style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.18)' }}
+                        >
+                          <svg className={`${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} text-[#34d399]`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                          <span className={`${isFullscreen ? 'text-lg' : 'text-sm'} font-bold text-[#34d399]`}>{stats.correct_count}</span>
                         </div>
-                        <div className={`flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-lg ${isFullscreen ? 'px-4 py-2' : 'px-3 py-1.5'}`}>
-                          <svg className={`${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} text-red-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                          <span className={`${isFullscreen ? 'text-lg' : 'text-sm'} font-bold text-red-400`}>{stats.total_responses - stats.correct_count}</span>
+                        <div
+                          className={`flex items-center gap-2 rounded-xl ${isFullscreen ? 'px-4 py-2.5' : 'px-3 py-1.5'}`}
+                          style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.18)' }}
+                        >
+                          <svg className={`${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} text-[#f87171]`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                          <span className={`${isFullscreen ? 'text-lg' : 'text-sm'} font-bold text-[#f87171]`}>{stats.total_responses - stats.correct_count}</span>
                         </div>
                       </div>
                     </div>
+
+                    {/* Gradient divider */}
+                    <div className="h-px mb-4" style={{ background: 'linear-gradient(90deg, transparent, rgba(124,92,252,0.2), transparent)' }} />
 
                     {/* Correct players */}
                     {playerResults.filter(pr => pr.is_correct).length > 0 && (
@@ -347,12 +637,17 @@ export default function SessionControl() {
                           {playerResults.filter(pr => pr.is_correct).map((pr) => (
                             <div
                               key={pr.participant_id}
-                              className={`flex items-center gap-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                              className={`flex items-center gap-2.5 rounded-xl transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                              style={{
+                                background: 'rgba(52,211,153,0.06)',
+                                border: '1px solid rgba(52,211,153,0.18)',
+                                boxShadow: '0 2px 12px rgba(52,211,153,0.06)',
+                              }}
                             >
-                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-emerald-400 shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                              <span className="font-semibold text-emerald-200 truncate">{pr.nickname}</span>
+                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-[#34d399] shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                              <span className="font-semibold text-[#34d399] truncate">{pr.nickname}</span>
                               {pr.points_awarded > 0 && (
-                                <span className={`ml-auto text-emerald-400 font-mono font-bold shrink-0 ${isFullscreen ? 'text-base' : 'text-xs'}`}>+{pr.points_awarded}</span>
+                                <span className={`ml-auto text-[#34d399] font-mono font-bold shrink-0 ${isFullscreen ? 'text-base' : 'text-xs'}`}>+{pr.points_awarded}</span>
                               )}
                             </div>
                           ))}
@@ -367,19 +662,27 @@ export default function SessionControl() {
                           {playerResults.filter(pr => !pr.is_correct && pr.answer_id).map((pr) => (
                             <div
                               key={pr.participant_id}
-                              className={`flex items-center gap-2.5 rounded-xl bg-red-500/10 border border-red-500/25 transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                              className={`flex items-center gap-2.5 rounded-xl transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                              style={{
+                                background: 'rgba(248,113,113,0.06)',
+                                border: '1px solid rgba(248,113,113,0.15)',
+                              }}
                             >
-                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-red-400 shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                              <span className="font-medium text-red-300 truncate">{pr.nickname}</span>
+                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-[#f87171] shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                              <span className="font-medium text-[#f87171] truncate">{pr.nickname}</span>
                             </div>
                           ))}
                           {playerResults.filter(pr => !pr.is_correct && !pr.answer_id).map((pr) => (
                             <div
                               key={pr.participant_id}
-                              className={`flex items-center gap-2.5 rounded-xl bg-slate-700/30 border border-slate-600/30 transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                              className={`flex items-center gap-2.5 rounded-xl transition-all ${isFullscreen ? 'px-5 py-4 text-lg' : 'px-3 py-2.5 text-sm'}`}
+                              style={{
+                                background: 'rgba(107,107,128,0.06)',
+                                border: '1px solid rgba(107,107,128,0.1)',
+                              }}
                             >
-                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-slate-500 shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                              <span className="font-medium text-slate-500 truncate">{pr.nickname}</span>
+                              <svg className={`${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} text-[#6b6b80] shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              <span className="font-medium text-[#6b6b80] truncate">{pr.nickname}</span>
                             </div>
                           ))}
                         </div>
@@ -388,52 +691,93 @@ export default function SessionControl() {
                   </div>
                 )}
 
+                {/* Gradient divider before leaderboard */}
+                <div className="h-px mb-5" style={{ background: 'linear-gradient(90deg, transparent, rgba(124,92,252,0.2), transparent)' }} />
+
                 {/* Leaderboard top 5 */}
                 <div className={`space-y-2 ${isFullscreen ? 'space-y-3' : ''}`}>
-                  {leaderboard.slice(0, 5).map((e, i) => (
-                    <div key={e.participant_id} className={`flex items-center justify-between rounded-xl transition ${isFullscreen ? 'px-6 py-4' : 'px-4 py-3'} ${
-                      i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
-                      i === 1 ? 'bg-slate-400/5 border border-slate-500/20' :
-                      i === 2 ? 'bg-amber-600/5 border border-amber-600/20' :
-                      'bg-slate-700/30 border border-slate-700/50'
-                    }`}>
-                      <div className="flex items-center gap-3">
-                        <span className={`${isFullscreen ? 'w-9 h-9 text-sm' : 'w-7 h-7 text-xs'} rounded-full flex items-center justify-center font-bold ${
-                          i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                          i === 1 ? 'bg-slate-400/20 text-slate-300' :
-                          i === 2 ? 'bg-amber-600/20 text-amber-400' :
-                          'bg-slate-700 text-slate-400'
-                        }`}>
-                          {e.rank}
+                  {leaderboard.slice(0, 5).map((e, i) => {
+                    const rankGradients: Record<number, React.CSSProperties> = {
+                      0: { background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 0 16px rgba(251,191,36,0.3)' },
+                      1: { background: 'linear-gradient(135deg, #94a3b8, #64748b)', boxShadow: '0 0 16px rgba(148,163,184,0.25)' },
+                      2: { background: 'linear-gradient(135deg, #d97706, #92400e)', boxShadow: '0 0 16px rgba(217,119,6,0.25)' },
+                    };
+                    return (
+                      <div
+                        key={e.participant_id}
+                        className={`flex items-center justify-between rounded-xl transition-all duration-300 ${isFullscreen ? 'px-6 py-4' : 'px-4 py-3'}`}
+                        style={{
+                          background: i === 0
+                            ? 'rgba(251,191,36,0.06)'
+                            : i === 1
+                              ? 'rgba(148,163,184,0.06)'
+                              : i === 2
+                                ? 'rgba(217,119,6,0.06)'
+                                : 'rgba(255,255,255,0.02)',
+                          border: i === 0
+                            ? '1px solid rgba(251,191,36,0.15)'
+                            : i === 1
+                              ? '1px solid rgba(148,163,184,0.12)'
+                              : i === 2
+                                ? '1px solid rgba(217,119,6,0.12)'
+                                : '1px solid rgba(255,255,255,0.05)',
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`${isFullscreen ? 'w-10 h-10 text-sm' : 'w-8 h-8 text-xs'} rounded-full flex items-center justify-center font-black text-white`}
+                            style={
+                              i < 3
+                                ? rankGradients[i]
+                                : { background: 'rgba(255,255,255,0.06)', color: '#6b6b80', boxShadow: 'none' }
+                            }
+                          >
+                            {e.rank}
+                          </span>
+                          <span className={`font-semibold text-white ${isFullscreen ? 'text-lg' : ''}`}>{e.nickname}</span>
+                        </div>
+                        <span
+                          className={`font-mono font-bold ${isFullscreen ? 'text-lg' : ''}`}
+                          style={{ color: '#7c5cfc' }}
+                        >
+                          {e.score} pts
                         </span>
-                        <span className={`font-medium text-slate-200 ${isFullscreen ? 'text-lg' : ''}`}>{e.nickname}</span>
                       </div>
-                      <span className={`font-mono text-indigo-400 font-medium ${isFullscreen ? 'text-lg' : ''}`}>{e.score} pts</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
+            {/* Action buttons */}
             <div className={`flex gap-4 justify-center ${isFullscreen ? 'pt-6 pb-2' : ''}`}>
               {!revealed ? (
                 <button
                   onClick={revealAnswer}
-                  className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-yellow-600/20`}
+                  className={`${isFullscreen ? 'px-10 py-4 text-lg' : 'px-8 py-3.5'} rounded-xl font-bold text-[#06060e] transition-all duration-300`}
+                  style={gradientBtnYellow}
+                  onMouseOver={(e) => hoverLift(e, gradientBtnYellow.boxShadow as string)}
+                  onMouseOut={(e) => hoverReset(e, gradientBtnYellow.boxShadow as string)}
                 >
                   Reveler la reponse
                 </button>
               ) : isLastQuestion ? (
                 <button
                   onClick={endGame}
-                  className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-red-600/20`}
+                  className={`${isFullscreen ? 'px-10 py-4 text-lg' : 'px-8 py-3.5'} rounded-xl font-bold text-white transition-all duration-300`}
+                  style={gradientBtnRed}
+                  onMouseOver={(e) => hoverLift(e, gradientBtnRed.boxShadow as string)}
+                  onMouseOut={(e) => hoverReset(e, gradientBtnRed.boxShadow as string)}
                 >
                   Terminer la partie
                 </button>
               ) : (
                 <button
                   onClick={nextQuestion}
-                  className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-indigo-600/20 flex items-center gap-2`}
+                  className={`${isFullscreen ? 'px-10 py-4 text-lg' : 'px-8 py-3.5'} rounded-xl font-bold text-white transition-all duration-300 flex items-center gap-2`}
+                  style={gradientBtnPurple}
+                  onMouseOver={(e) => hoverLift(e, gradientBtnPurple.boxShadow as string)}
+                  onMouseOut={(e) => hoverReset(e, gradientBtnPurple.boxShadow as string)}
                 >
                   Question suivante
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -442,8 +786,15 @@ export default function SessionControl() {
               {!connected && (
                 <button
                   onClick={forceFinishRest}
-                  className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 rounded-xl font-semibold transition-all duration-300`}
+                  className={`${isFullscreen ? 'px-8 py-4 text-lg' : 'px-6 py-3'} rounded-xl font-bold text-[#f87171] transition-all duration-300`}
+                  style={{
+                    background: 'rgba(248,113,113,0.08)',
+                    border: '1px solid rgba(248,113,113,0.2)',
+                    boxShadow: '0 0 20px rgba(248,113,113,0.1)',
+                  }}
                   title="Terminer via REST (WebSocket deconnecte)"
+                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(248,113,113,0.14)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(248,113,113,0.08)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   Forcer la fin
                 </button>
@@ -452,46 +803,97 @@ export default function SessionControl() {
           </div>
         )}
 
-        {/* FINISHED - Podium */}
+        {/* ================================================================
+            FINISHED - Podium
+            ================================================================ */}
         {gameStatus === 'finished' && (
           <div className={`space-y-8 text-center ${isFullscreen ? 'flex-1 flex flex-col items-center justify-center' : ''}`}>
+
+            {/* Title with gradient text */}
             <div>
-              <h2 className={`${isFullscreen ? 'text-4xl md:text-5xl' : 'text-3xl'} font-bold text-white mb-2`}>Partie terminee !</h2>
-              <p className={`text-slate-400 ${isFullscreen ? 'text-lg' : ''}`}>Voici le podium final</p>
+              <h2
+                className={`${isFullscreen ? 'text-4xl md:text-5xl' : 'text-3xl'} font-black mb-3`}
+                style={{
+                  background: 'linear-gradient(135deg, #7c5cfc, #a855f7, #e879f9)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: 'drop-shadow(0 0 20px rgba(124,92,252,0.3))',
+                }}
+              >
+                Partie terminee !
+              </h2>
+              <p className={`text-[#8888a0] ${isFullscreen ? 'text-lg' : ''}`}>Voici le podium final</p>
             </div>
 
-            {/* Podium visuel */}
+            {/* Visual podium */}
             {leaderboard.length >= 1 && (
-              <div className={`flex items-end justify-center gap-3 ${isFullscreen ? 'gap-4 mt-8' : 'mt-6'}`}>
-                {/* 2eme place */}
+              <div className={`flex items-end justify-center gap-3 ${isFullscreen ? 'gap-5 mt-8' : 'mt-6'}`}>
+
+                {/* 2nd place */}
                 {leaderboard.length >= 2 && (
                   <div className="flex flex-col items-center animate-[slideUp_0.8s_ease-out_0.3s_both]">
-                    <div className={`${isFullscreen ? 'text-5xl mb-3' : 'text-4xl mb-2'}`}>&#x1F948;</div>
-                    <p className={`font-bold text-slate-200 ${isFullscreen ? 'text-xl mb-2' : 'text-lg mb-1'}`}>{leaderboard[1].nickname}</p>
-                    <p className={`font-mono text-indigo-400 ${isFullscreen ? 'text-lg mb-3' : 'mb-2'}`}>{leaderboard[1].score} pts</p>
-                    <div className={`${isFullscreen ? 'w-36 h-36' : 'w-28 h-28'} bg-gradient-to-t from-slate-600 to-slate-400 rounded-t-xl flex items-center justify-center shadow-lg shadow-slate-500/20`}>
+                    <div
+                      className={`${isFullscreen ? 'text-5xl mb-3' : 'text-4xl mb-2'}`}
+                      style={{ filter: 'drop-shadow(0 0 12px rgba(148,163,184,0.4))' }}
+                    >
+                      &#x1F948;
+                    </div>
+                    <p className={`font-bold text-white ${isFullscreen ? 'text-xl mb-2' : 'text-lg mb-1'}`}>{leaderboard[1].nickname}</p>
+                    <p className={`font-mono font-bold ${isFullscreen ? 'text-lg mb-3' : 'mb-2'}`} style={{ color: '#7c5cfc' }}>{leaderboard[1].score} pts</p>
+                    <div
+                      className={`${isFullscreen ? 'w-36 h-36' : 'w-28 h-28'} rounded-t-xl flex items-center justify-center`}
+                      style={{
+                        background: 'linear-gradient(to top, #475569, #94a3b8)',
+                        border: '1px solid rgba(148,163,184,0.25)',
+                        boxShadow: '0 0 30px rgba(148,163,184,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      }}
+                    >
                       <span className={`${isFullscreen ? 'text-5xl' : 'text-4xl'} font-black text-white/80`}>2</span>
                     </div>
                   </div>
                 )}
 
-                {/* 1ere place */}
+                {/* 1st place */}
                 <div className="flex flex-col items-center animate-[slideUp_0.8s_ease-out_both]">
-                  <div className={`${isFullscreen ? 'text-6xl mb-3' : 'text-5xl mb-2'}`}>&#x1F947;</div>
-                  <p className={`font-bold text-yellow-300 ${isFullscreen ? 'text-2xl mb-2' : 'text-xl mb-1'}`}>{leaderboard[0].nickname}</p>
-                  <p className={`font-mono text-yellow-400 ${isFullscreen ? 'text-xl mb-3' : 'text-lg mb-2'}`}>{leaderboard[0].score} pts</p>
-                  <div className={`${isFullscreen ? 'w-40 h-48' : 'w-32 h-40'} bg-gradient-to-t from-yellow-600 to-yellow-400 rounded-t-xl flex items-center justify-center shadow-lg shadow-yellow-500/30`}>
+                  <div
+                    className={`${isFullscreen ? 'text-6xl mb-3' : 'text-5xl mb-2'}`}
+                    style={{ filter: 'drop-shadow(0 0 16px rgba(251,191,36,0.5))' }}
+                  >
+                    &#x1F947;
+                  </div>
+                  <p className={`font-black ${isFullscreen ? 'text-2xl mb-2' : 'text-xl mb-1'}`} style={{ color: '#fbbf24' }}>{leaderboard[0].nickname}</p>
+                  <p className={`font-mono font-bold ${isFullscreen ? 'text-xl mb-3' : 'text-lg mb-2'}`} style={{ color: '#7c5cfc' }}>{leaderboard[0].score} pts</p>
+                  <div
+                    className={`${isFullscreen ? 'w-40 h-48' : 'w-32 h-40'} rounded-t-xl flex items-center justify-center`}
+                    style={{
+                      background: 'linear-gradient(to top, #92400e, #fbbf24)',
+                      border: '1px solid rgba(251,191,36,0.3)',
+                      boxShadow: '0 0 40px rgba(251,191,36,0.2), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    }}
+                  >
                     <span className={`${isFullscreen ? 'text-6xl' : 'text-5xl'} font-black text-white/80`}>1</span>
                   </div>
                 </div>
 
-                {/* 3eme place */}
+                {/* 3rd place */}
                 {leaderboard.length >= 3 && (
                   <div className="flex flex-col items-center animate-[slideUp_0.8s_ease-out_0.6s_both]">
-                    <div className={`${isFullscreen ? 'text-5xl mb-3' : 'text-4xl mb-2'}`}>&#x1F949;</div>
-                    <p className={`font-bold text-slate-200 ${isFullscreen ? 'text-xl mb-2' : 'text-lg mb-1'}`}>{leaderboard[2].nickname}</p>
-                    <p className={`font-mono text-indigo-400 ${isFullscreen ? 'text-lg mb-3' : 'mb-2'}`}>{leaderboard[2].score} pts</p>
-                    <div className={`${isFullscreen ? 'w-36 h-28' : 'w-28 h-20'} bg-gradient-to-t from-amber-700 to-amber-500 rounded-t-xl flex items-center justify-center shadow-lg shadow-amber-600/20`}>
+                    <div
+                      className={`${isFullscreen ? 'text-5xl mb-3' : 'text-4xl mb-2'}`}
+                      style={{ filter: 'drop-shadow(0 0 12px rgba(217,119,6,0.4))' }}
+                    >
+                      &#x1F949;
+                    </div>
+                    <p className={`font-bold text-white ${isFullscreen ? 'text-xl mb-2' : 'text-lg mb-1'}`}>{leaderboard[2].nickname}</p>
+                    <p className={`font-mono font-bold ${isFullscreen ? 'text-lg mb-3' : 'mb-2'}`} style={{ color: '#7c5cfc' }}>{leaderboard[2].score} pts</p>
+                    <div
+                      className={`${isFullscreen ? 'w-36 h-28' : 'w-28 h-20'} rounded-t-xl flex items-center justify-center`}
+                      style={{
+                        background: 'linear-gradient(to top, #78350f, #d97706)',
+                        border: '1px solid rgba(217,119,6,0.25)',
+                        boxShadow: '0 0 30px rgba(217,119,6,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      }}
+                    >
                       <span className={`${isFullscreen ? 'text-5xl' : 'text-4xl'} font-black text-white/80`}>3</span>
                     </div>
                   </div>
@@ -499,44 +901,78 @@ export default function SessionControl() {
               </div>
             )}
 
-            {/* Classement complet (4eme et au-dela) */}
+            {/* Full ranking (4th and beyond) */}
             {leaderboard.length > 3 && (
-              <div className={`bg-slate-800/50 border border-slate-700/50 rounded-xl ${isFullscreen ? 'p-6 max-w-3xl w-full' : 'p-4 max-w-lg'} mx-auto`}>
-                <h3 className={`${isFullscreen ? 'text-lg mb-4' : 'text-sm mb-3'} font-semibold text-slate-400`}>Classement complet</h3>
+              <div
+                className={`rounded-2xl ${isFullscreen ? 'p-6 max-w-3xl w-full' : 'p-5 max-w-lg'} mx-auto`}
+                style={glassCard}
+              >
+                <h3 className={`${isFullscreen ? 'text-lg mb-4' : 'text-sm mb-3'} font-bold text-[#8888a0]`}>Classement complet</h3>
+                <div className="h-px mb-4" style={{ background: 'linear-gradient(90deg, transparent, rgba(124,92,252,0.2), transparent)' }} />
                 <div className={`space-y-2 ${isFullscreen ? 'space-y-3' : ''}`}>
                   {leaderboard.slice(3).map((e) => (
-                    <div key={e.participant_id} className={`flex items-center justify-between rounded-xl bg-slate-700/30 border border-slate-700/50 ${isFullscreen ? 'px-6 py-3' : 'px-4 py-2'}`}>
+                    <div
+                      key={e.participant_id}
+                      className={`flex items-center justify-between rounded-xl transition-all duration-300 ${isFullscreen ? 'px-6 py-3' : 'px-4 py-2.5'}`}
+                      style={{
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                      }}
+                    >
                       <div className="flex items-center gap-3">
-                        <span className={`${isFullscreen ? 'w-8 h-8 text-sm' : 'w-7 h-7 text-xs'} rounded-full bg-slate-700 text-slate-400 flex items-center justify-center font-bold`}>
+                        <span
+                          className={`${isFullscreen ? 'w-8 h-8 text-sm' : 'w-7 h-7 text-xs'} rounded-full flex items-center justify-center font-bold`}
+                          style={{ background: 'rgba(255,255,255,0.06)', color: '#6b6b80' }}
+                        >
                           {e.rank}
                         </span>
-                        <span className={`font-medium text-slate-200 ${isFullscreen ? 'text-base' : 'text-sm'}`}>{e.nickname}</span>
+                        <span className={`font-medium text-white ${isFullscreen ? 'text-base' : 'text-sm'}`}>{e.nickname}</span>
                       </div>
-                      <span className={`font-mono text-indigo-400 ${isFullscreen ? 'text-base' : 'text-sm'}`}>{e.score} pts</span>
+                      <span className={`font-mono font-bold ${isFullscreen ? 'text-base' : 'text-sm'}`} style={{ color: '#7c5cfc' }}>{e.score} pts</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
+            {/* Action buttons */}
             <div className="flex gap-4 justify-center flex-wrap">
+              {/* Analytique - gradient purple */}
               <button
                 onClick={() => navigate(`/session/${sid}/analytics`)}
-                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+                className="px-7 py-3.5 rounded-xl font-bold text-white transition-all duration-300 flex items-center gap-2"
+                style={gradientBtnPurple}
+                onMouseOver={(e) => hoverLift(e, gradientBtnPurple.boxShadow as string)}
+                onMouseOut={(e) => hoverReset(e, gradientBtnPurple.boxShadow as string)}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                 Analytique
               </button>
+
+              {/* Exporter CSV - gradient green */}
               <button
                 onClick={downloadCsv}
-                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-emerald-600/20 flex items-center gap-2"
+                className="px-7 py-3.5 rounded-xl font-bold text-[#06060e] transition-all duration-300 flex items-center gap-2"
+                style={gradientBtnGreen}
+                onMouseOver={(e) => hoverLift(e, gradientBtnGreen.boxShadow as string)}
+                onMouseOut={(e) => hoverReset(e, gradientBtnGreen.boxShadow as string)}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 Exporter CSV
               </button>
+
+              {/* Retour - glass with border */}
               <button
                 onClick={() => navigate('/dashboard')}
-                className="px-6 py-3 bg-slate-700/50 hover:bg-slate-700 border border-slate-600/50 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2"
+                className="px-7 py-3.5 rounded-xl font-bold text-white transition-all duration-300 flex items-center gap-2"
+                style={{
+                  background: 'rgba(15, 15, 35, 0.5)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(124,92,252,0.15)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.3)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.15)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)'; }}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 Retour au tableau de bord

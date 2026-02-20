@@ -17,15 +17,15 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#06060e] text-white flex items-center justify-center">
+        <div className="spinner-premium w-8 h-8" />
       </div>
     );
   }
 
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>}>
+      <Suspense fallback={<div className="min-h-screen bg-[#06060e] flex items-center justify-center"><div className="spinner-premium w-8 h-8" /></div>}>
         <Routes>
           {/* Participant routes (no auth) */}
           <Route path="/join" element={<Join />} />

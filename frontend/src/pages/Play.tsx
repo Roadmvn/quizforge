@@ -133,15 +133,20 @@ export default function Play() {
 
   const myRank = leaderboard.find((e) => e.participant_id === pid);
 
-  const answerColors = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500'];
+  const answerColors = [
+    'bg-[rgba(239,68,68,0.12)] hover:bg-[rgba(239,68,68,0.2)]',
+    'bg-[rgba(96,165,250,0.12)] hover:bg-[rgba(96,165,250,0.2)]',
+    'bg-[rgba(251,191,36,0.12)] hover:bg-[rgba(251,191,36,0.2)]',
+    'bg-[rgba(52,211,153,0.12)] hover:bg-[rgba(52,211,153,0.2)]',
+  ];
 
   if (!pid || !ptoken) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#06060e] text-white flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <p className="text-red-400 text-lg">Session invalide</p>
-          <p className="text-slate-400">Veuillez rejoindre une session via un code.</p>
-          <a href="/join" className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition">
+          <p className="text-[#f87171] text-lg font-medium">Session invalide</p>
+          <p className="text-[#6b6b80]">Veuillez rejoindre une session via un code.</p>
+          <a href="/join" className="inline-block px-6 py-3 bg-[#7c5cfc] hover:bg-[#6b4ee0] rounded-lg font-semibold transition">
             Rejoindre un quiz
           </a>
         </div>
@@ -150,21 +155,24 @@ export default function Play() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-[#06060e] text-white flex flex-col">
       {/* Header */}
-      <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-        <span className="font-semibold">{nickname}</span>
-        <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} aria-label="Indicateur de connexion" />
+      <header className="bg-[rgba(255,255,255,0.02)] border-b border-[rgba(255,255,255,0.06)] px-4 py-3 flex items-center justify-between">
+        <span className="text-[#e8e8f0] font-medium">{nickname}</span>
+        <span
+          className={`w-2.5 h-2.5 rounded-full ${connected ? 'bg-[#34d399]' : 'bg-[#f87171]'}`}
+          aria-label="Indicateur de connexion"
+        />
       </header>
 
       {reconnecting && (
-        <div className="bg-yellow-600/90 text-white text-center text-sm py-2 px-4">
+        <div className="bg-[rgba(251,191,36,0.1)] border-b border-[rgba(251,191,36,0.15)] text-[#fbbf24] text-center text-sm py-2 px-4">
           Reconnexion en cours (tentative {attempt}/{MAX_RECONNECT_ATTEMPTS})...
         </div>
       )}
 
       {sendError && (
-        <div className="bg-red-600/90 text-white text-center text-sm py-2 px-4">
+        <div className="bg-[rgba(248,113,113,0.1)] border-b border-[rgba(248,113,113,0.15)] text-[#f87171] text-center text-sm py-2 px-4">
           Erreur d'envoi. Veuillez re-essayer.
         </div>
       )}
@@ -173,11 +181,11 @@ export default function Play() {
         {/* FAILED */}
         {failed && (
           <div className="text-center space-y-4">
-            <p className="text-red-400 text-lg">Connexion perdue</p>
-            <p className="text-slate-400">Impossible de se reconnecter au serveur.</p>
+            <p className="text-[#f87171] text-lg font-medium">Connexion perdue</p>
+            <p className="text-[#6b6b80]">Impossible de se reconnecter au serveur.</p>
             <button
               onClick={() => navigate(sessionCode ? `/join/${sessionCode}` : '/join')}
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition"
+              className="px-6 py-3 bg-[#7c5cfc] hover:bg-[#6b4ee0] rounded-lg font-semibold transition"
             >
               Reconnecter
             </button>
@@ -187,9 +195,9 @@ export default function Play() {
         {/* WAITING */}
         {!failed && phase === 'waiting' && (
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <h2 className="text-2xl font-bold">En attente de l'hôte...</h2>
-            <p className="text-slate-400">La partie va bientôt commencer</p>
+            <div className="spinner-premium w-12 h-12 mx-auto" />
+            <h2 className="text-xl font-semibold text-[#e8e8f0]">En attente de l'hote...</h2>
+            <p className="text-[#6b6b80]">La partie va bientot commencer</p>
           </div>
         )}
 
@@ -197,14 +205,14 @@ export default function Play() {
         {phase === 'question' && question && (
           <div className="w-full max-w-lg space-y-6">
             <div className="text-center">
-              <span className="text-slate-400 text-sm">
+              <span className="text-[#6b6b80] text-sm">
                 Question {question.question_idx + 1} / {question.total_questions}
               </span>
-              <h2 className="text-xl font-bold mt-2 mb-4">{question.text}</h2>
+              <h2 className="text-xl font-semibold text-[#e8e8f0] mt-2 mb-4">{question.text}</h2>
               {question.image_url && (
-                <img src={question.image_url} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-slate-900/50 mx-auto mb-4" />
+                <img src={question.image_url} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-[rgba(255,255,255,0.02)] mx-auto mb-4" />
               )}
-              <div className={`text-4xl font-bold font-mono ${timeLeft <= 5 ? 'text-red-400' : 'text-indigo-400'}`}>
+              <div className={`font-mono text-4xl font-bold ${timeLeft <= 5 ? 'text-[#f87171]' : 'text-[#7c5cfc]'}`}>
                 {timeLeft}
               </div>
             </div>
@@ -213,7 +221,7 @@ export default function Play() {
                 <button
                   key={a.id}
                   onClick={() => submitAnswer(a.id)}
-                  className={`p-6 rounded-xl text-lg font-bold transition active:scale-95 ${answerColors[i] || 'bg-slate-700'} hover:opacity-90`}
+                  className={`p-6 rounded-xl text-lg font-semibold text-white transition active:scale-95 ${answerColors[i] || 'bg-[rgba(255,255,255,0.04)]'}`}
                 >
                   {a.text}
                 </button>
@@ -225,9 +233,9 @@ export default function Play() {
         {/* ANSWERED (waiting for reveal) */}
         {phase === 'answered' && (
           <div className="text-center space-y-4">
-            <div className="text-6xl">⏳</div>
-            <h2 className="text-xl font-bold">Réponse envoyée !</h2>
-            <p className="text-slate-400">En attente de la révélation...</p>
+            <div className="text-6xl">&#9203;</div>
+            <h2 className="text-xl font-semibold text-[#e8e8f0]">Reponse envoyee !</h2>
+            <p className="text-[#6b6b80]">En attente de la revelation...</p>
           </div>
         )}
 
@@ -237,15 +245,15 @@ export default function Play() {
             {result && (
               <div className="text-center space-y-2">
                 <div className="text-5xl">{result.is_correct ? '\u2705' : '\u274C'}</div>
-                <h2 className={`text-2xl font-bold ${result.is_correct ? 'text-green-400' : 'text-red-400'}`}>
+                <h2 className={`text-2xl font-bold ${result.is_correct ? 'text-[#34d399]' : 'text-[#f87171]'}`}>
                   {result.is_correct ? 'Correct !' : 'Faux !'}
                 </h2>
-                <p className="text-indigo-400 text-xl">+{result.points_awarded} pts</p>
+                <p className="text-[#7c5cfc] text-xl font-semibold">+{result.points_awarded} pts</p>
               </div>
             )}
-            <h2 className="text-xl font-bold text-center">{question.text}</h2>
+            <h2 className="text-xl font-semibold text-[#e8e8f0] text-center">{question.text}</h2>
             {question.image_url && (
-              <img src={question.image_url} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-slate-900/50 mx-auto" />
+              <img src={question.image_url} alt="Question" className="max-h-80 w-full object-contain rounded-xl bg-[rgba(255,255,255,0.02)] mx-auto" />
             )}
             <div className="grid grid-cols-2 gap-3">
               {question.answers.map((a) => (
@@ -253,10 +261,10 @@ export default function Play() {
                   key={a.id}
                   className={`p-4 rounded-xl text-center font-medium ${
                     a.is_correct
-                      ? 'bg-green-500/30 ring-2 ring-green-400'
+                      ? 'bg-[rgba(52,211,153,0.15)] ring-1 ring-[rgba(52,211,153,0.3)]'
                       : a.id === selectedAnswer
-                        ? 'bg-red-500/30 ring-2 ring-red-400'
-                        : 'bg-slate-800 opacity-50'
+                        ? 'bg-[rgba(248,113,113,0.15)] ring-1 ring-[rgba(248,113,113,0.3)]'
+                        : 'bg-[rgba(255,255,255,0.02)] opacity-40'
                   }`}
                 >
                   {a.text}
@@ -265,12 +273,12 @@ export default function Play() {
               ))}
             </div>
             {myRank && (
-              <div className="text-center bg-slate-900 rounded-xl p-4 border border-slate-800">
-                <p className="text-slate-400">Votre classement</p>
-                <p className="text-3xl font-bold text-indigo-400">
+              <div className="glass rounded-xl p-4 text-center">
+                <p className="text-[#6b6b80] text-sm">Votre classement</p>
+                <p className="text-3xl font-bold text-[#7c5cfc] mt-1">
                   {myRank.rank === 1 ? '\uD83E\uDD47' : myRank.rank === 2 ? '\uD83E\uDD48' : myRank.rank === 3 ? '\uD83E\uDD49' : `#${myRank.rank}`}
                 </p>
-                <p className="text-slate-400">{myRank.score} pts</p>
+                <p className="text-[#6b6b80] text-sm mt-1">{myRank.score} pts</p>
               </div>
             )}
           </div>
@@ -279,17 +287,17 @@ export default function Play() {
         {/* FINISHED */}
         {phase === 'finished' && (
           <div className="w-full max-w-md space-y-6 text-center">
-            <h2 className="text-3xl font-bold">{'\uD83C\uDFC1'} Partie terminée !</h2>
+            <h2 className="text-3xl font-bold text-[#e8e8f0]">{'\uD83C\uDFC1'} Partie terminee !</h2>
             {myRank && (
-              <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+              <div className="glass rounded-xl p-6">
                 <p className="text-5xl mb-2">
                   {myRank.rank === 1 ? '\uD83C\uDFC6' : myRank.rank === 2 ? '\uD83E\uDD48' : myRank.rank === 3 ? '\uD83E\uDD49' : '\uD83C\uDFAE'}
                 </p>
-                <p className="text-slate-400">Vous terminez</p>
-                <p className={`text-5xl font-bold ${myRank.rank === 1 ? 'text-yellow-400' : 'text-indigo-400'}`}>
+                <p className="text-[#6b6b80]">Vous terminez</p>
+                <p className={`text-5xl font-bold mt-1 ${myRank.rank === 1 ? 'text-[#fbbf24]' : 'text-[#7c5cfc]'}`}>
                   #{myRank.rank}
                 </p>
-                <p className="text-xl mt-2">{myRank.score} pts</p>
+                <p className="text-xl mt-2 text-[#e8e8f0]">{myRank.score} pts</p>
               </div>
             )}
             <div className="space-y-2">
@@ -297,22 +305,24 @@ export default function Play() {
                 <div
                   key={e.participant_id}
                   className={`flex items-center justify-between rounded-lg px-4 py-2 ${
-                    e.participant_id === pid ? 'bg-indigo-500/20 border border-indigo-500/40' : 'bg-slate-900'
+                    e.participant_id === pid
+                      ? 'bg-[rgba(124,92,252,0.06)] border border-[rgba(124,92,252,0.15)]'
+                      : 'bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg">
                       {e.rank === 1 ? '\uD83E\uDD47' : e.rank === 2 ? '\uD83E\uDD48' : e.rank === 3 ? '\uD83E\uDD49' : `${e.rank}.`}
                     </span>
-                    <span>{e.nickname}</span>
+                    <span className="text-[#e8e8f0]">{e.nickname}</span>
                   </div>
-                  <span className="font-mono text-indigo-400">{e.score} pts</span>
+                  <span className="font-mono text-[#7c5cfc]">{e.score} pts</span>
                 </div>
               ))}
             </div>
             <a
               href="/join"
-              className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition mt-4"
+              className="inline-block px-6 py-3 bg-[#7c5cfc] hover:bg-[#6b4ee0] rounded-lg text-sm font-semibold text-white transition mt-4"
             >
               Rejoindre un autre quiz
             </a>

@@ -33,104 +33,127 @@ export default function Login({ onLogin, onRegister }: Props) {
     }
   };
 
+  const inputClass = "w-full px-4 py-3.5 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl text-white placeholder-[#4a4a64] focus:outline-none focus:border-[rgba(124,92,252,0.5)] focus:bg-[rgba(255,255,255,0.06)] focus:shadow-[0_0_0_3px_rgba(124,92,252,0.12),0_0_20px_rgba(124,92,252,0.08)] transition-all duration-300";
+
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 w-full max-w-md shadow-2xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+    <div className="min-h-screen bg-[#06060e] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="mesh-gradient" />
+      <div className="mesh-gradient-extra" />
+      <div className="grid-pattern fixed inset-0 z-0" />
+      <div className="noise" />
+
+      {/* Decorative orbs */}
+      <div className="fixed top-1/4 left-1/4 w-[300px] h-[300px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle, rgba(124,92,252,0.08) 0%, transparent 60%)', filter: 'blur(40px)', animation: 'orbFloat1 15s ease-in-out infinite' }} />
+      <div className="fixed bottom-1/4 right-1/4 w-[250px] h-[250px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 60%)', filter: 'blur(40px)', animation: 'orbFloat2 18s ease-in-out infinite' }} />
+
+      <div className="relative z-10 w-full max-w-[440px] animate-in">
+        {/* Logo */}
+        <div className="text-center mb-12">
+          <div className="inline-block mb-5">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+              style={{
+                background: 'linear-gradient(135deg, #7c5cfc 0%, #a855f7 100%)',
+                boxShadow: '0 0 40px rgba(124,92,252,0.4), 0 8px 25px rgba(124,92,252,0.25)',
+                animation: 'logoBreathe 4s ease-in-out infinite',
+              }}
+            >
+              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </div>
-            <h1 className="text-2xl font-bold text-white">
-              <span className="text-indigo-400">Quiz</span>Forge
-            </h1>
           </div>
-          <p className="text-slate-400 text-sm">Plateforme de formation en cybersecurite</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">
+            <span className="text-[#7c5cfc]">Quiz</span>
+            <span className="text-white">Forge</span>
+          </h1>
+          <p className="text-[#8888a0] text-sm tracking-wide">Plateforme de formation en cybersecurite</p>
         </div>
 
-        <div className="flex mb-6 bg-slate-900/50 rounded-xl p-1">
-          <button
-            onClick={() => setIsRegister(false)}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              !isRegister
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-slate-300'
-            }`}
-          >
-            Connexion
-          </button>
-          <button
-            onClick={() => setIsRegister(true)}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              isRegister
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-slate-300'
-            }`}
-          >
-            Inscription
-          </button>
+        {/* Card */}
+        <div
+          className="rounded-2xl p-8 glow-card"
+          style={{
+            background: 'rgba(15, 15, 35, 0.7)',
+            backdropFilter: 'blur(30px)',
+            border: '1px solid rgba(124, 92, 252, 0.12)',
+            boxShadow: '0 25px 80px rgba(0,0,0,0.4), 0 0 40px rgba(124,92,252,0.06), inset 0 1px 0 rgba(255,255,255,0.06)',
+          }}
+        >
+          {/* Tab switcher */}
+          <div className="flex mb-8 border-b border-[rgba(255,255,255,0.06)]">
+            <button
+              onClick={() => setIsRegister(false)}
+              className={`relative flex-1 pb-3.5 text-sm font-semibold transition-all duration-300 ${
+                !isRegister ? 'text-white' : 'text-[#4a4a64] hover:text-[#8888a0]'
+              }`}
+            >
+              Connexion
+              {!isRegister && (
+                <span className="absolute bottom-0 left-[10%] right-[10%] h-[2px] rounded-t" style={{ background: 'linear-gradient(90deg, #7c5cfc, #a855f7)', boxShadow: '0 0 12px rgba(124,92,252,0.5)' }} />
+              )}
+            </button>
+            <button
+              onClick={() => setIsRegister(true)}
+              className={`relative flex-1 pb-3.5 text-sm font-semibold transition-all duration-300 ${
+                isRegister ? 'text-white' : 'text-[#4a4a64] hover:text-[#8888a0]'
+              }`}
+            >
+              Inscription
+              {isRegister && (
+                <span className="absolute bottom-0 left-[10%] right-[10%] h-[2px] rounded-t" style={{ background: 'linear-gradient(90deg, #7c5cfc, #a855f7)', boxShadow: '0 0 12px rgba(124,92,252,0.5)' }} />
+              )}
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {isRegister && (
+              <div className="stagger-1">
+                <label htmlFor="register-name" className="block text-xs font-semibold text-[#8888a0] mb-2 uppercase tracking-[0.15em]">Nom d'affichage</label>
+                <input id="register-name" type="text" placeholder="Votre nom" value={name} onChange={(e) => setName(e.target.value)} required className={inputClass} />
+              </div>
+            )}
+            <div className={isRegister ? 'stagger-2' : 'stagger-1'}>
+              <label htmlFor="login-email" className="block text-xs font-semibold text-[#8888a0] mb-2 uppercase tracking-[0.15em]">Email</label>
+              <input id="login-email" type="email" placeholder="nom@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputClass} />
+            </div>
+            <div className={isRegister ? 'stagger-3' : 'stagger-2'}>
+              <label htmlFor="login-password" className="block text-xs font-semibold text-[#8888a0] mb-2 uppercase tracking-[0.15em]">Mot de passe</label>
+              <input id="login-password" type="password" placeholder="8 caracteres minimum" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className={inputClass} />
+            </div>
+
+            {error && (
+              <div className="bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)] text-[#f87171] rounded-xl p-3.5 text-sm animate-in flex items-center gap-2">
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed btn-glow"
+              style={{
+                background: 'linear-gradient(135deg, #7c5cfc 0%, #a855f7 100%)',
+                color: 'white',
+                boxShadow: '0 0 25px rgba(124,92,252,0.25), 0 4px 15px rgba(124,92,252,0.2)',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.boxShadow = '0 0 40px rgba(124,92,252,0.4), 0 6px 20px rgba(124,92,252,0.3)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.boxShadow = '0 0 25px rgba(124,92,252,0.25), 0 4px 15px rgba(124,92,252,0.2)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="spinner-premium w-4 h-4" />
+                  Chargement...
+                </span>
+              ) : isRegister ? 'Creer un compte' : 'Se connecter'}
+            </button>
+          </form>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isRegister && (
-            <div>
-              <label htmlFor="register-name" className="block text-xs font-medium text-slate-400 mb-1.5">Nom d'affichage</label>
-              <input
-                id="register-name"
-                type="text"
-                placeholder="Votre nom"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-              />
-            </div>
-          )}
-          <div>
-            <label htmlFor="login-email" className="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
-            <input
-              id="login-email"
-              type="email"
-              placeholder="nom@exemple.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-            />
-          </div>
-          <div>
-            <label htmlFor="login-password" className="block text-xs font-medium text-slate-400 mb-1.5">Mot de passe</label>
-            <input
-              id="login-password"
-              type="password"
-              placeholder="8 caracteres minimum"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-3 text-sm">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                Chargement...
-              </span>
-            ) : isRegister ? 'Creer un compte' : 'Se connecter'}
-          </button>
-        </form>
+        {/* Footer */}
+        <p className="text-center text-[#4a4a64] text-xs mt-6 tracking-wide">Securise par chiffrement de bout en bout</p>
       </div>
     </div>
   );

@@ -67,12 +67,18 @@ export default function Join() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="bg-slate-900 rounded-2xl shadow-xl p-8 w-full max-w-md border border-slate-800">
-        <h1 className="text-3xl font-bold text-center mb-2 text-white">
-          <span className="text-indigo-400">Quiz</span>Forge
+    <div className="min-h-screen bg-[#06060e] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background layers */}
+      <div className="mesh-gradient" />
+      <div className="fixed inset-0 grid-pattern pointer-events-none z-0" />
+      <div className="noise" />
+
+      <div className="glass animate-in rounded-xl w-full max-w-[420px] p-8 relative z-10">
+        <h1 className="text-2xl font-semibold text-center mb-2">
+          <span className="text-[#7c5cfc]">Quiz</span>
+          <span className="text-white">Forge</span>
         </h1>
-        <p className="text-slate-400 text-center mb-8">Rejoindre un quiz en direct</p>
+        <p className="text-[#6b6b80] text-center mb-8 text-sm">Rejoindre un quiz en direct</p>
 
         <form onSubmit={handleJoin} className="space-y-4">
           <input
@@ -83,7 +89,7 @@ export default function Join() {
             maxLength={6}
             required
             aria-label="Code de la session"
-            className="w-full px-4 py-4 bg-slate-800 border border-slate-700 rounded-lg text-white text-center text-2xl font-mono tracking-widest placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
+            className="w-full px-4 py-4 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] rounded-lg text-white text-center text-2xl font-mono tracking-[0.2em] placeholder-[#3d3d52] focus:outline-none focus:border-[rgba(124,92,252,0.4)] focus:shadow-[0_0_0_3px_rgba(124,92,252,0.1)] transition uppercase"
           />
           <input
             type="text"
@@ -93,13 +99,13 @@ export default function Join() {
             maxLength={50}
             required
             aria-label="Votre pseudo"
-            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-4 py-3 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] rounded-lg text-white placeholder-[#3d3d52] focus:outline-none focus:border-[rgba(124,92,252,0.4)] focus:shadow-[0_0_0_3px_rgba(124,92,252,0.1)] transition"
           />
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+          {error && <p className="text-[#f87171] text-sm text-center">{error}</p>}
           <button
             type="submit"
             disabled={loading || code.length < 6}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-4 bg-[#7c5cfc] hover:bg-[#6b4ee0] text-white font-semibold text-lg rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Connexion...' : 'Rejoindre'}
           </button>
@@ -114,7 +120,7 @@ export default function Join() {
                   code: savedSession.creds.code,
                 },
               })}
-              className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold text-lg rounded-lg transition"
+              className="w-full py-4 bg-[#34d399] hover:bg-[#2dd4bf] text-[#06060e] font-semibold text-lg rounded-lg transition"
             >
               Reprendre la partie ({savedSession.creds.nickname})
             </button>
