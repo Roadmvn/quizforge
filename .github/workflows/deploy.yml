@@ -2,7 +2,7 @@ name: Build & Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 env:
   REGISTRY: ghcr.io
@@ -41,26 +41,60 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
+      - name: Set image tag
+        id: tag
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=preprod" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build & push backend
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
-          tags: ${{ env.BACKEND_IMAGE }}:latest,${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
 
       - name: Build & push nginx
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
-          tags: ${{ env.NGINX_IMAGE }}:latest,${{ env.NGINX_IMAGE }}:${{ github.sha }}
+          tags: |
+            ${{ env.NGINX_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.NGINX_IMAGE }}:${{ github.sha }}
 
-  deploy:
+  deploy-preprod:
     runs-on: ubuntu-latest
     needs: build
+    if: github.ref_name == 'develop'
+    environment: preprod
 
     steps:
-      - name: Deploy to VPS
+      - name: Deploy to Préprod (VPS-A)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PREPROD_HOST }}
+          username: ${{ secrets.PREPROD_USER }}
+          key: ${{ secrets.PREPROD_SSH_KEY }}
+          script: |
+            cd /opt/quizforge
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            echo "✅ Préprod déployée"
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref_name == 'main'
+    environment: production
+
+    steps:
+      - name: Deploy to Prod (VPS-B)
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -70,3 +104,4 @@ jobs:
             cd /opt/quizforge
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --force-recreate
+            echo "✅ Prod déployée"
