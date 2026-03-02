@@ -1,7 +1,7 @@
 """
 Leaderboard routes — cross-session rankings by theme.
 
-Aggregates participant scores across finished sessions, grouped by nickname.
+Shows each player's best single-session score, grouped by nickname.
 """
 
 from fastapi import APIRouter, Depends
@@ -19,7 +19,7 @@ def _build_theme_leaderboard(
     db: DbSession,
     theme: str | None = None,
 ) -> list[ThemeLeaderboardEntry]:
-    """Build a leaderboard aggregating scores across finished sessions.
+    """Build a leaderboard showing each player's best single-session score.
 
     If *theme* is provided, only sessions linked to quizzes with that theme
     are included.  Otherwise all finished sessions count.
@@ -27,7 +27,7 @@ def _build_theme_leaderboard(
     query = (
         db.query(
             Participant.nickname.label("username"),
-            func.sum(Participant.score).label("total_points"),
+            func.max(Participant.score).label("best_score"),
             func.count(Session.id.distinct()).label("sessions_count"),
         )
         .join(Session, Participant.session_id == Session.id)
@@ -41,14 +41,14 @@ def _build_theme_leaderboard(
     rows = (
         query
         .group_by(Participant.nickname)
-        .order_by(func.sum(Participant.score).desc())
+        .order_by(func.max(Participant.score).desc())
         .all()
     )
 
     return [
         ThemeLeaderboardEntry(
             username=row.username,
-            total_points=row.total_points,
+            best_score=row.best_score,
             sessions_count=row.sessions_count,
             rank=idx + 1,
         )

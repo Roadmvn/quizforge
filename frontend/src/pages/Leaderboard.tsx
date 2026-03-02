@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 interface LeaderboardEntry {
   rank: number;
   username: string;
-  total_points: number;
+  best_score: number;
   sessions_count: number;
 }
 
@@ -198,7 +198,7 @@ export default function Leaderboard() {
           >
             <span>Rang</span>
             <span>Joueur</span>
-            <span className="text-right">Points</span>
+            <span className="text-right">Meilleur score</span>
             <span className="text-right">Sessions</span>
           </div>
 
@@ -250,7 +250,7 @@ export default function Leaderboard() {
                   border: `1px solid rgba(124,92,252,${entry.rank <= 3 ? '0.15' : '0.08'})`,
                 }}
               >
-                {entry.total_points.toLocaleString('fr-FR')} pts
+                {entry.best_score.toLocaleString('fr-FR')} pts
               </span>
 
               {/* Sessions count */}

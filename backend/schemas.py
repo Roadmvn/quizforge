@@ -279,6 +279,6 @@ class AdminDashboard(BaseModel):
 
 class ThemeLeaderboardEntry(BaseModel):
     username: str
-    total_points: int
+    best_score: int
     sessions_count: int
     rank: int
