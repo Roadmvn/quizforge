@@ -69,6 +69,7 @@ app.add_middleware(
 
 app.include_router(admin_router)
 app.include_router(auth_router)
+app.include_router(leaderboard_router)
 app.include_router(quiz_router)
 app.include_router(session_router)
 app.include_router(upload_router)
