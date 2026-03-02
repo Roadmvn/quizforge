@@ -282,3 +282,19 @@ class ThemeLeaderboardEntry(BaseModel):
     best_score: int
     sessions_count: int
     rank: int
+
+
+# ---- Session Leaderboard -------------------------------------------------
+
+class SessionSummaryForLeaderboard(BaseModel):
+    session_id: str
+    quiz_title: str
+    theme: str | None
+    started_at: datetime
+    participant_count: int
+
+
+class SessionLeaderboardEntry(BaseModel):
+    rank: int
+    username: str
+    score: int
