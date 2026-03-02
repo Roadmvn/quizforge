@@ -11,6 +11,7 @@ const SessionControl = lazy(() => import('./pages/SessionControl'));
 const SessionAnalytics = lazy(() => import('./pages/SessionAnalytics'));
 const Join = lazy(() => import('./pages/Join'));
 const Play = lazy(() => import('./pages/Play'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 
 function App() {
   const { user, loading, login, register, logout } = useAuth();
@@ -48,6 +49,7 @@ function App() {
               <Route path="/quiz/:id/edit" element={<Layout user={user} onLogout={logout}><QuizEditor /></Layout>} />
               <Route path="/session/:sid" element={<Layout user={user} onLogout={logout}><SessionControl /></Layout>} />
               <Route path="/session/:sid/analytics" element={<Layout user={user} onLogout={logout}><SessionAnalytics /></Layout>} />
+              <Route path="/leaderboard" element={<Layout user={user} onLogout={logout}><Leaderboard /></Layout>} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </>
           ) : (

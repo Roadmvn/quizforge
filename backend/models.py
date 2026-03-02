@@ -68,6 +68,7 @@ class Quiz(Base):
     id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     title: str = Column(String(200), nullable=False)
     description: str = Column(Text, default="")
+    theme: str = Column(String(100), nullable=True, default=None, index=True)
     owner_id: str = Column(String(36), ForeignKey("users.id"), nullable=False)
     created_at: datetime = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Column(

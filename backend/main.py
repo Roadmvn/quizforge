@@ -23,6 +23,7 @@ from models import Base, User
 from services.auth import get_current_user
 from routes.admin import router as admin_router
 from routes.auth import router as auth_router
+from routes.leaderboard import router as leaderboard_router
 from routes.quiz import router as quiz_router
 from routes.session import router as session_router
 from routes.upload import router as upload_router
@@ -37,6 +38,10 @@ async def lifespan(app: FastAPI):
         columns = [c["name"] for c in inspect(engine).get_columns("users")]
         if "is_active" not in columns:
             conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+            conn.commit()
+        quiz_columns = [c["name"] for c in inspect(engine).get_columns("quizzes")]
+        if "theme" not in quiz_columns:
+            conn.execute(text("ALTER TABLE quizzes ADD COLUMN theme VARCHAR(100)"))
             conn.commit()
     yield
 

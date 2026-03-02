@@ -113,6 +113,7 @@ class QuestionUpdate(BaseModel):
 class QuizCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = ""
+    theme: str | None = Field(default=None, max_length=100)
     questions: list[QuestionCreate] = []
 
 
@@ -122,6 +123,7 @@ class QuizRead(BaseModel):
     id: str
     title: str
     description: str
+    theme: str | None = None
     owner_id: str
     created_at: datetime
     updated_at: datetime
@@ -135,6 +137,7 @@ class QuizSummary(BaseModel):
     id: str
     title: str
     description: str
+    theme: str | None = None
     created_at: datetime
     updated_at: datetime
     question_count: int = 0
@@ -143,6 +146,7 @@ class QuizSummary(BaseModel):
 class QuizUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=200)
     description: str | None = None
+    theme: str | None = None
 
 
 # ---- Session -------------------------------------------------------------
@@ -269,3 +273,12 @@ class AdminDashboard(BaseModel):
     active_sessions: int
     recent_users: list[UserRead]
     recent_sessions: list[AdminSessionRead]
+
+
+# ---- Theme Leaderboard ---------------------------------------------------
+
+class ThemeLeaderboardEntry(BaseModel):
+    username: str
+    total_points: int
+    sessions_count: int
+    rank: int
