@@ -295,6 +295,14 @@ class SessionSummaryForLeaderboard(BaseModel):
     participant_count: int
 
 
+class QuizSummaryForLeaderboard(BaseModel):
+    quiz_id: str
+    quiz_title: str
+    theme: str | None
+    session_count: int
+    participant_count: int
+
+
 class SessionLeaderboardEntry(BaseModel):
     rank: int
     username: str

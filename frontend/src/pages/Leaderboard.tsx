@@ -10,19 +10,12 @@ interface ThemeLeaderboardEntry {
   excluded: boolean;
 }
 
-interface SessionSummary {
-  session_id: string;
+interface QuizSummary {
+  quiz_id: string;
   quiz_title: string;
   theme: string | null;
-  started_at: string;
+  session_count: number;
   participant_count: number;
-}
-
-interface SessionLeaderboardEntry {
-  rank: number;
-  username: string;
-  score: number;
-  excluded: boolean;
 }
 
 const glassCard = {
@@ -41,20 +34,15 @@ const selectStyle = {
 
 const optionStyle = { background: '#0f0f23', color: '#e8e8f0' };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
 export default function Leaderboard() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
   const [themes, setThemes] = useState<string[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<string>('');
-  const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [selectedSessionId, setSelectedSessionId] = useState<string>('');
-  const [globalEntries, setGlobalEntries] = useState<ThemeLeaderboardEntry[]>([]);
-  const [sessionEntries, setSessionEntries] = useState<SessionLeaderboardEntry[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
+  const [selectedQuizId, setSelectedQuizId] = useState<string>('');
+  const [entries, setEntries] = useState<ThemeLeaderboardEntry[]>([]);
   const [excludedNicknames, setExcludedNicknames] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -78,35 +66,30 @@ export default function Leaderboard() {
     }
   }, [isAdmin]);
 
-  // Load sessions when theme changes
+  // Load quizzes when theme changes
   useEffect(() => {
     const url = selectedTheme
-      ? `/leaderboard/sessions?theme=${encodeURIComponent(selectedTheme)}`
-      : '/leaderboard/sessions';
-    api.get<SessionSummary[]>(url)
-      .then(setSessions)
+      ? `/leaderboard/quizzes?theme=${encodeURIComponent(selectedTheme)}`
+      : '/leaderboard/quizzes';
+    api.get<QuizSummary[]>(url)
+      .then(setQuizzes)
       .catch((e) => setError(e.message));
-    setSelectedSessionId('');
+    setSelectedQuizId('');
   }, [selectedTheme]);
 
   // Load leaderboard data
   useEffect(() => {
     setLoading(true);
-    if (selectedSessionId) {
-      api.get<SessionLeaderboardEntry[]>(`/leaderboard/session/${selectedSessionId}`)
-        .then(setSessionEntries)
-        .catch((e) => setError(e.message))
-        .finally(() => setLoading(false));
-    } else {
-      const url = selectedTheme
+    const url = selectedQuizId
+      ? `/leaderboard/quiz/${selectedQuizId}`
+      : selectedTheme
         ? `/leaderboard/${encodeURIComponent(selectedTheme)}`
         : '/leaderboard/';
-      api.get<ThemeLeaderboardEntry[]>(url)
-        .then(setGlobalEntries)
-        .catch((e) => setError(e.message))
-        .finally(() => setLoading(false));
-    }
-  }, [selectedTheme, selectedSessionId]);
+    api.get<ThemeLeaderboardEntry[]>(url)
+      .then(setEntries)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [selectedTheme, selectedQuizId]);
 
   const toggleExclude = async (nickname: string) => {
     const lower = nickname.toLowerCase();
@@ -120,21 +103,19 @@ export default function Leaderboard() {
         setExcludedNicknames((prev) => new Set(prev).add(lower));
       }
       // Refresh leaderboard data
-      if (selectedSessionId) {
-        const data = await api.get<SessionLeaderboardEntry[]>(`/leaderboard/session/${selectedSessionId}`);
-        setSessionEntries(data);
-      } else {
-        const url = selectedTheme ? `/leaderboard/${encodeURIComponent(selectedTheme)}` : '/leaderboard/';
-        const data = await api.get<ThemeLeaderboardEntry[]>(url);
-        setGlobalEntries(data);
-      }
+      const url = selectedQuizId
+        ? `/leaderboard/quiz/${selectedQuizId}`
+        : selectedTheme
+          ? `/leaderboard/${encodeURIComponent(selectedTheme)}`
+          : '/leaderboard/';
+      const data = await api.get<ThemeLeaderboardEntry[]>(url);
+      setEntries(data);
     } catch (e: any) {
       setError(e.message || 'Erreur lors de la modification');
     }
   };
 
-  const isSessionView = !!selectedSessionId;
-  const selectedSession = sessions.find((s) => s.session_id === selectedSessionId);
+  const selectedQuiz = quizzes.find((q) => q.quiz_id === selectedQuizId);
 
   const rankStyle = (rank: number) => {
     if (rank === 1)
@@ -153,9 +134,7 @@ export default function Leaderboard() {
     return `#${rank}`;
   };
 
-  const entries = isSessionView ? sessionEntries : globalEntries;
-
-  if (loading && entries.length === 0 && globalEntries.length === 0) {
+  if (loading && entries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4">
         <div className="spinner-premium w-10 h-10" />
@@ -210,9 +189,11 @@ export default function Leaderboard() {
             <div>
               <h1 className="text-xl font-bold text-white tracking-tight">Classement</h1>
               <p className="text-[10px] text-[#4a4a64] uppercase tracking-[0.2em] font-medium mt-0.5">
-                {isSessionView && selectedSession
-                  ? `Session : ${selectedSession.quiz_title}`
-                  : 'Leaderboard global'}
+                {selectedQuiz
+                  ? `Quiz : ${selectedQuiz.quiz_title}`
+                  : selectedTheme
+                    ? `Thematique : ${selectedTheme}`
+                    : 'Leaderboard global'}
               </p>
             </div>
           </div>
@@ -266,21 +247,21 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Session selector */}
+        {/* Quiz selector */}
         <div className="relative">
-          <label className="block text-[10px] text-[#4a4a64] uppercase tracking-[0.15em] font-bold mb-1.5">Session</label>
+          <label className="block text-[10px] text-[#4a4a64] uppercase tracking-[0.15em] font-bold mb-1.5">Quiz</label>
           <select
-            value={selectedSessionId}
-            onChange={(e) => setSelectedSessionId(e.target.value)}
+            value={selectedQuizId}
+            onChange={(e) => setSelectedQuizId(e.target.value)}
             className="appearance-none cursor-pointer pl-4 pr-10 py-2.5 rounded-xl text-sm font-medium text-white outline-none transition-all duration-200 w-full sm:w-auto"
             style={selectStyle}
             onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(168,85,247,0.35)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.15)'; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(124,92,252,0.15)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(124,92,252,0.05)'; }}
           >
-            <option value="" style={optionStyle}>Classement global</option>
-            {sessions.map((s) => (
-              <option key={s.session_id} value={s.session_id} style={optionStyle}>
-                {s.quiz_title} — {formatDate(s.started_at)} ({s.participant_count} joueur{s.participant_count > 1 ? 's' : ''})
+            <option value="" style={optionStyle}>Tous les quiz</option>
+            {quizzes.map((q) => (
+              <option key={q.quiz_id} value={q.quiz_id} style={optionStyle}>
+                {q.quiz_title} ({q.participant_count} joueur{q.participant_count > 1 ? 's' : ''} · {q.session_count} session{q.session_count > 1 ? 's' : ''})
               </option>
             ))}
           </select>
@@ -316,8 +297,8 @@ export default function Leaderboard() {
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Aucun classement disponible</h3>
             <p className="text-sm text-[#8888a0] leading-relaxed">
-              {isSessionView
-                ? 'Aucun participant pour cette session.'
+              {selectedQuizId
+                ? 'Aucun participant pour ce quiz.'
                 : selectedTheme
                   ? `Aucune session terminee pour la thematique "${selectedTheme}".`
                   : 'Aucune session terminee pour le moment. Lancez des quiz pour voir le classement !'}
@@ -338,208 +319,108 @@ export default function Leaderboard() {
           <div style={{ height: '3px', background: 'linear-gradient(90deg, #fbbf24, #7c5cfc, #a855f7)', opacity: 0.6 }} />
 
           {/* Table header */}
-          {isSessionView ? (
-            <div
-              className={`grid ${isAdmin ? 'grid-cols-[60px_1fr_120px_44px] sm:grid-cols-[80px_1fr_140px_44px]' : 'grid-cols-[60px_1fr_120px] sm:grid-cols-[80px_1fr_140px]'} px-5 py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4a4a64]`}
-              style={{ borderBottom: '1px solid rgba(124,92,252,0.08)', background: 'rgba(124,92,252,0.02)' }}
-            >
-              <span>Rang</span>
-              <span>Joueur</span>
-              <span className="text-right">Score</span>
-              {isAdmin && <span></span>}
-            </div>
-          ) : (
-            <div
-              className={`grid ${isAdmin ? 'grid-cols-[60px_1fr_120px_120px_44px] sm:grid-cols-[80px_1fr_140px_140px_44px]' : 'grid-cols-[60px_1fr_120px_120px] sm:grid-cols-[80px_1fr_140px_140px]'} px-5 py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4a4a64]`}
-              style={{ borderBottom: '1px solid rgba(124,92,252,0.08)', background: 'rgba(124,92,252,0.02)' }}
-            >
-              <span>Rang</span>
-              <span>Joueur</span>
-              <span className="text-right">Meilleur score</span>
-              <span className="text-right">Sessions</span>
-              {isAdmin && <span></span>}
-            </div>
-          )}
+          <div
+            className={`grid ${isAdmin ? 'grid-cols-[60px_1fr_120px_120px_44px] sm:grid-cols-[80px_1fr_140px_140px_44px]' : 'grid-cols-[60px_1fr_120px_120px] sm:grid-cols-[80px_1fr_140px_140px]'} px-5 py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4a4a64]`}
+            style={{ borderBottom: '1px solid rgba(124,92,252,0.08)', background: 'rgba(124,92,252,0.02)' }}
+          >
+            <span>Rang</span>
+            <span>Joueur</span>
+            <span className="text-right">Meilleur score</span>
+            <span className="text-right">Sessions</span>
+            {isAdmin && <span></span>}
+          </div>
 
           {/* Table rows */}
-          {isSessionView
-            ? sessionEntries.map((entry) => (
-                <div
-                  key={entry.username}
-                  className={`grid ${isAdmin ? 'grid-cols-[60px_1fr_120px_44px] sm:grid-cols-[80px_1fr_140px_44px]' : 'grid-cols-[60px_1fr_120px] sm:grid-cols-[80px_1fr_140px]'} px-5 py-3.5 items-center transition-all duration-200 ${entry.rank <= 3 && !entry.excluded ? 'stagger-' + entry.rank : ''}`}
-                  style={{
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    opacity: entry.excluded ? 0.4 : 1,
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(124,92,252,0.04)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <div className="flex items-center">
-                    {entry.excluded ? (
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold"
-                        style={{ background: 'rgba(107,107,128,0.1)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.1)' }}
-                        title="Hors classement"
-                      >
-                        HC
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={rankStyle(entry.rank)}>
-                        {entry.rank <= 3 ? rankEmoji(entry.rank) : entry.rank}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={
-                        entry.excluded
-                          ? { background: 'rgba(107,107,128,0.1)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.1)' }
-                          : {
-                              background: entry.rank <= 3 ? 'linear-gradient(135deg, #7c5cfc, #a855f7)' : 'rgba(124,92,252,0.1)',
-                              color: entry.rank <= 3 ? '#fff' : '#7c5cfc',
-                              border: entry.rank <= 3 ? 'none' : '1px solid rgba(124,92,252,0.12)',
-                              boxShadow: entry.rank <= 3 ? '0 0 12px rgba(124,92,252,0.3)' : 'none',
-                            }
-                      }
-                    >
-                      {entry.username.charAt(0).toUpperCase()}
-                    </div>
-                    <span className={`font-medium truncate ${entry.excluded ? 'text-[#4a4a64] line-through' : entry.rank <= 3 ? 'text-white' : 'text-[#e8e8f0]'}`}>
-                      {entry.username}
-                    </span>
-                    {entry.excluded && (
-                      <span className="text-[9px] uppercase tracking-widest text-[#4a4a64] font-bold whitespace-nowrap">Hors classement</span>
-                    )}
-                  </div>
-                  <span
-                    className="text-right font-mono text-sm font-bold px-2.5 py-1 rounded-md w-fit ml-auto"
-                    style={
-                      entry.excluded
-                        ? { background: 'rgba(107,107,128,0.06)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.08)' }
-                        : {
-                            background: entry.rank <= 3 ? 'rgba(124,92,252,0.12)' : 'rgba(124,92,252,0.06)',
-                            color: entry.rank <= 3 ? '#a78bfa' : '#8888a0',
-                            border: `1px solid rgba(124,92,252,${entry.rank <= 3 ? '0.15' : '0.08'})`,
-                          }
-                    }
+          {entries.map((entry) => (
+            <div
+              key={entry.username}
+              className={`grid ${isAdmin ? 'grid-cols-[60px_1fr_120px_120px_44px] sm:grid-cols-[80px_1fr_140px_140px_44px]' : 'grid-cols-[60px_1fr_120px_120px] sm:grid-cols-[80px_1fr_140px_140px]'} px-5 py-3.5 items-center transition-all duration-200 ${entry.rank <= 3 && !entry.excluded ? 'stagger-' + entry.rank : ''}`}
+              style={{
+                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                opacity: entry.excluded ? 0.4 : 1,
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(124,92,252,0.04)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <div className="flex items-center">
+                {entry.excluded ? (
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                    style={{ background: 'rgba(107,107,128,0.1)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.1)' }}
+                    title="Hors classement"
                   >
-                    {entry.score.toLocaleString('fr-FR')} pts
-                  </span>
-                  {isAdmin && (
-                    <button
-                      onClick={() => toggleExclude(entry.username)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
-                      style={
-                        entry.excluded
-                          ? { background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }
-                          : { background: 'rgba(248,113,113,0.08)', color: '#f87171', border: '1px solid rgba(248,113,113,0.15)' }
-                      }
-                      title={entry.excluded ? 'Remettre dans le classement' : 'Mettre hors classement'}
-                    >
-                      {entry.excluded ? (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                        </svg>
-                      )}
-                    </button>
-                  )}
-                </div>
-              ))
-            : globalEntries.map((entry) => (
+                    HC
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={rankStyle(entry.rank)}>
+                    {entry.rank <= 3 ? rankEmoji(entry.rank) : entry.rank}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-3 min-w-0">
                 <div
-                  key={entry.username}
-                  className={`grid ${isAdmin ? 'grid-cols-[60px_1fr_120px_120px_44px] sm:grid-cols-[80px_1fr_140px_140px_44px]' : 'grid-cols-[60px_1fr_120px_120px] sm:grid-cols-[80px_1fr_140px_140px]'} px-5 py-3.5 items-center transition-all duration-200 ${entry.rank <= 3 && !entry.excluded ? 'stagger-' + entry.rank : ''}`}
-                  style={{
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    opacity: entry.excluded ? 0.4 : 1,
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(124,92,252,0.04)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  style={
+                    entry.excluded
+                      ? { background: 'rgba(107,107,128,0.1)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.1)' }
+                      : {
+                          background: entry.rank <= 3 ? 'linear-gradient(135deg, #7c5cfc, #a855f7)' : 'rgba(124,92,252,0.1)',
+                          color: entry.rank <= 3 ? '#fff' : '#7c5cfc',
+                          border: entry.rank <= 3 ? 'none' : '1px solid rgba(124,92,252,0.12)',
+                          boxShadow: entry.rank <= 3 ? '0 0 12px rgba(124,92,252,0.3)' : 'none',
+                        }
+                  }
                 >
-                  <div className="flex items-center">
-                    {entry.excluded ? (
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold"
-                        style={{ background: 'rgba(107,107,128,0.1)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.1)' }}
-                        title="Hors classement"
-                      >
-                        HC
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={rankStyle(entry.rank)}>
-                        {entry.rank <= 3 ? rankEmoji(entry.rank) : entry.rank}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={
-                        entry.excluded
-                          ? { background: 'rgba(107,107,128,0.1)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.1)' }
-                          : {
-                              background: entry.rank <= 3 ? 'linear-gradient(135deg, #7c5cfc, #a855f7)' : 'rgba(124,92,252,0.1)',
-                              color: entry.rank <= 3 ? '#fff' : '#7c5cfc',
-                              border: entry.rank <= 3 ? 'none' : '1px solid rgba(124,92,252,0.12)',
-                              boxShadow: entry.rank <= 3 ? '0 0 12px rgba(124,92,252,0.3)' : 'none',
-                            }
-                      }
-                    >
-                      {entry.username.charAt(0).toUpperCase()}
-                    </div>
-                    <span className={`font-medium truncate ${entry.excluded ? 'text-[#4a4a64] line-through' : entry.rank <= 3 ? 'text-white' : 'text-[#e8e8f0]'}`}>
-                      {entry.username}
-                    </span>
-                    {entry.excluded && (
-                      <span className="text-[9px] uppercase tracking-widest text-[#4a4a64] font-bold whitespace-nowrap">Hors classement</span>
-                    )}
-                  </div>
-                  <span
-                    className="text-right font-mono text-sm font-bold px-2.5 py-1 rounded-md w-fit ml-auto"
-                    style={
-                      entry.excluded
-                        ? { background: 'rgba(107,107,128,0.06)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.08)' }
-                        : {
-                            background: entry.rank <= 3 ? 'rgba(124,92,252,0.12)' : 'rgba(124,92,252,0.06)',
-                            color: entry.rank <= 3 ? '#a78bfa' : '#8888a0',
-                            border: `1px solid rgba(124,92,252,${entry.rank <= 3 ? '0.15' : '0.08'})`,
-                          }
-                    }
-                  >
-                    {entry.best_score.toLocaleString('fr-FR')} pts
-                  </span>
-                  <span className={`text-right text-sm ${entry.excluded ? 'text-[#4a4a64]' : 'text-[#8888a0]'}`}>
-                    {entry.sessions_count} session{entry.sessions_count > 1 ? 's' : ''}
-                  </span>
-                  {isAdmin && (
-                    <button
-                      onClick={() => toggleExclude(entry.username)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
-                      style={
-                        entry.excluded
-                          ? { background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }
-                          : { background: 'rgba(248,113,113,0.08)', color: '#f87171', border: '1px solid rgba(248,113,113,0.15)' }
-                      }
-                      title={entry.excluded ? 'Remettre dans le classement' : 'Mettre hors classement'}
-                    >
-                      {entry.excluded ? (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                        </svg>
-                      )}
-                    </button>
-                  )}
+                  {entry.username.charAt(0).toUpperCase()}
                 </div>
-              ))}
+                <span className={`font-medium truncate ${entry.excluded ? 'text-[#4a4a64] line-through' : entry.rank <= 3 ? 'text-white' : 'text-[#e8e8f0]'}`}>
+                  {entry.username}
+                </span>
+                {entry.excluded && (
+                  <span className="text-[9px] uppercase tracking-widest text-[#4a4a64] font-bold whitespace-nowrap">Hors classement</span>
+                )}
+              </div>
+              <span
+                className="text-right font-mono text-sm font-bold px-2.5 py-1 rounded-md w-fit ml-auto"
+                style={
+                  entry.excluded
+                    ? { background: 'rgba(107,107,128,0.06)', color: '#4a4a64', border: '1px solid rgba(107,107,128,0.08)' }
+                    : {
+                        background: entry.rank <= 3 ? 'rgba(124,92,252,0.12)' : 'rgba(124,92,252,0.06)',
+                        color: entry.rank <= 3 ? '#a78bfa' : '#8888a0',
+                        border: `1px solid rgba(124,92,252,${entry.rank <= 3 ? '0.15' : '0.08'})`,
+                      }
+                }
+              >
+                {entry.best_score.toLocaleString('fr-FR')} pts
+              </span>
+              <span className={`text-right text-sm ${entry.excluded ? 'text-[#4a4a64]' : 'text-[#8888a0]'}`}>
+                {entry.sessions_count} session{entry.sessions_count > 1 ? 's' : ''}
+              </span>
+              {isAdmin && (
+                <button
+                  onClick={() => toggleExclude(entry.username)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+                  style={
+                    entry.excluded
+                      ? { background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }
+                      : { background: 'rgba(248,113,113,0.08)', color: '#f87171', border: '1px solid rgba(248,113,113,0.15)' }
+                  }
+                  title={entry.excluded ? 'Remettre dans le classement' : 'Mettre hors classement'}
+                >
+                  {entry.excluded ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                  )}
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

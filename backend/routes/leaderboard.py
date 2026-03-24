@@ -1,5 +1,5 @@
 """
-Leaderboard routes — cross-session rankings by theme.
+Leaderboard routes — cross-session rankings by theme and quiz.
 
 Shows each player's best single-session score, grouped by nickname.
 Excluded nicknames appear at the bottom without a rank.
@@ -12,8 +12,7 @@ from sqlalchemy.orm import Session as DbSession
 from database import get_db
 from models import ExcludedNickname, Participant, Quiz, Session
 from schemas import (
-    SessionLeaderboardEntry,
-    SessionSummaryForLeaderboard,
+    QuizSummaryForLeaderboard,
     ThemeLeaderboardEntry,
 )
 
@@ -26,14 +25,16 @@ def _get_excluded_nicknames(db: DbSession) -> set[str]:
     return {r[0].lower() for r in rows}
 
 
-def _build_theme_leaderboard(
+def _build_leaderboard(
     db: DbSession,
     theme: str | None = None,
+    quiz_id: str | None = None,
 ) -> list[ThemeLeaderboardEntry]:
     """Build a leaderboard showing each player's best single-session score.
 
-    If *theme* is provided, only sessions linked to quizzes with that theme
-    are included.  Otherwise all finished sessions count.
+    Filters:
+    - theme: only sessions linked to quizzes with that theme
+    - quiz_id: only sessions of that specific quiz
 
     Excluded nicknames are placed at the bottom with rank=0.
     """
@@ -50,7 +51,9 @@ def _build_theme_leaderboard(
         .filter(Session.status == "finished")
     )
 
-    if theme is not None:
+    if quiz_id is not None:
+        query = query.filter(Quiz.id == quiz_id)
+    elif theme is not None:
         query = query.filter(Quiz.theme == theme)
 
     rows = (
@@ -96,21 +99,21 @@ def list_themes(db: DbSession = Depends(get_db)):
     return [r[0] for r in rows]
 
 
-@router.get("/sessions", response_model=list[SessionSummaryForLeaderboard])
-def list_sessions(
+@router.get("/quizzes", response_model=list[QuizSummaryForLeaderboard])
+def list_quizzes(
     theme: str | None = Query(None),
     db: DbSession = Depends(get_db),
 ):
-    """List finished sessions, optionally filtered by theme."""
+    """List quizzes that have at least one finished session, optionally filtered by theme."""
     query = (
         db.query(
-            Session.id.label("session_id"),
+            Quiz.id.label("quiz_id"),
             Quiz.title.label("quiz_title"),
             Quiz.theme,
-            Session.created_at.label("started_at"),
+            func.count(Session.id.distinct()).label("session_count"),
             func.count(Participant.id).label("participant_count"),
         )
-        .join(Quiz, Session.quiz_id == Quiz.id)
+        .join(Session, Session.quiz_id == Quiz.id)
         .outerjoin(Participant, Participant.session_id == Session.id)
         .filter(Session.status == "finished")
     )
@@ -120,67 +123,39 @@ def list_sessions(
 
     rows = (
         query
-        .group_by(Session.id)
-        .order_by(Session.created_at.desc())
+        .group_by(Quiz.id)
+        .order_by(Quiz.title)
         .all()
     )
 
     return [
-        SessionSummaryForLeaderboard(
-            session_id=row.session_id,
+        QuizSummaryForLeaderboard(
+            quiz_id=row.quiz_id,
             quiz_title=row.quiz_title,
             theme=row.theme,
-            started_at=row.started_at,
+            session_count=row.session_count,
             participant_count=row.participant_count,
         )
         for row in rows
     ]
 
 
-@router.get("/session/{session_id}", response_model=list[SessionLeaderboardEntry])
-def session_leaderboard(session_id: str, db: DbSession = Depends(get_db)):
-    """Ranking of players for a single session."""
-    session = db.query(Session).filter(Session.id == session_id).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-
-    excluded = _get_excluded_nicknames(db)
-
-    rows = (
-        db.query(Participant.nickname, Participant.score)
-        .filter(Participant.session_id == session_id)
-        .order_by(Participant.score.desc())
-        .all()
-    )
-
-    ranked: list[SessionLeaderboardEntry] = []
-    excluded_entries: list[SessionLeaderboardEntry] = []
-    rank = 1
-
-    for row in rows:
-        is_excluded = row.nickname.lower() in excluded
-        entry = SessionLeaderboardEntry(
-            rank=0 if is_excluded else rank,
-            username=row.nickname,
-            score=row.score,
-            excluded=is_excluded,
-        )
-        if is_excluded:
-            excluded_entries.append(entry)
-        else:
-            ranked.append(entry)
-            rank += 1
-
-    return ranked + excluded_entries
+@router.get("/quiz/{quiz_id}", response_model=list[ThemeLeaderboardEntry])
+def quiz_leaderboard(quiz_id: str, db: DbSession = Depends(get_db)):
+    """Leaderboard for a specific quiz (all sessions combined)."""
+    quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    return _build_leaderboard(db, quiz_id=quiz_id)
 
 
 @router.get("/", response_model=list[ThemeLeaderboardEntry])
 def global_leaderboard(db: DbSession = Depends(get_db)):
     """Global leaderboard across all themes."""
-    return _build_theme_leaderboard(db)
+    return _build_leaderboard(db)
 
 
 @router.get("/{theme}", response_model=list[ThemeLeaderboardEntry])
 def theme_leaderboard(theme: str, db: DbSession = Depends(get_db)):
     """Leaderboard for a specific quiz theme."""
-    return _build_theme_leaderboard(db, theme=theme)
+    return _build_leaderboard(db, theme=theme)
