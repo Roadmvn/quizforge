@@ -2,6 +2,7 @@
 Leaderboard routes — cross-session rankings by theme.
 
 Shows each player's best single-session score, grouped by nickname.
+Excluded nicknames appear at the bottom without a rank.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -9,7 +10,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session as DbSession
 
 from database import get_db
-from models import Participant, Quiz, Session
+from models import ExcludedNickname, Participant, Quiz, Session
 from schemas import (
     SessionLeaderboardEntry,
     SessionSummaryForLeaderboard,
@@ -17,6 +18,12 @@ from schemas import (
 )
 
 router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
+
+
+def _get_excluded_nicknames(db: DbSession) -> set[str]:
+    """Return the set of excluded nicknames (lowercased for comparison)."""
+    rows = db.query(ExcludedNickname.nickname).all()
+    return {r[0].lower() for r in rows}
 
 
 def _build_theme_leaderboard(
@@ -27,7 +34,11 @@ def _build_theme_leaderboard(
 
     If *theme* is provided, only sessions linked to quizzes with that theme
     are included.  Otherwise all finished sessions count.
+
+    Excluded nicknames are placed at the bottom with rank=0.
     """
+    excluded = _get_excluded_nicknames(db)
+
     query = (
         db.query(
             Participant.nickname.label("username"),
@@ -49,15 +60,26 @@ def _build_theme_leaderboard(
         .all()
     )
 
-    return [
-        ThemeLeaderboardEntry(
+    ranked: list[ThemeLeaderboardEntry] = []
+    excluded_entries: list[ThemeLeaderboardEntry] = []
+    rank = 1
+
+    for row in rows:
+        is_excluded = row.username.lower() in excluded
+        entry = ThemeLeaderboardEntry(
             username=row.username,
             best_score=row.best_score,
             sessions_count=row.sessions_count,
-            rank=idx + 1,
+            rank=0 if is_excluded else rank,
+            excluded=is_excluded,
         )
-        for idx, row in enumerate(rows)
-    ]
+        if is_excluded:
+            excluded_entries.append(entry)
+        else:
+            ranked.append(entry)
+            rank += 1
+
+    return ranked + excluded_entries
 
 
 @router.get("/themes", response_model=list[str])
@@ -122,6 +144,8 @@ def session_leaderboard(session_id: str, db: DbSession = Depends(get_db)):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    excluded = _get_excluded_nicknames(db)
+
     rows = (
         db.query(Participant.nickname, Participant.score)
         .filter(Participant.session_id == session_id)
@@ -129,10 +153,25 @@ def session_leaderboard(session_id: str, db: DbSession = Depends(get_db)):
         .all()
     )
 
-    return [
-        SessionLeaderboardEntry(rank=idx + 1, username=row.nickname, score=row.score)
-        for idx, row in enumerate(rows)
-    ]
+    ranked: list[SessionLeaderboardEntry] = []
+    excluded_entries: list[SessionLeaderboardEntry] = []
+    rank = 1
+
+    for row in rows:
+        is_excluded = row.nickname.lower() in excluded
+        entry = SessionLeaderboardEntry(
+            rank=0 if is_excluded else rank,
+            username=row.nickname,
+            score=row.score,
+            excluded=is_excluded,
+        )
+        if is_excluded:
+            excluded_entries.append(entry)
+        else:
+            ranked.append(entry)
+            rank += 1
+
+    return ranked + excluded_entries
 
 
 @router.get("/", response_model=list[ThemeLeaderboardEntry])

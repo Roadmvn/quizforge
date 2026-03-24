@@ -4,12 +4,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Participant, Question, Quiz, Session as SessionModel, User
+from models import ExcludedNickname, Participant, Question, Quiz, Session as SessionModel, User
 from schemas import (
     AdminDashboard,
     AdminQuizRead,
     AdminSessionRead,
     AdminUserCreate,
+    ExcludedNicknameCreate,
+    ExcludedNicknameRead,
     PasswordReset,
     StatusUpdate,
     UserRead,
@@ -243,3 +245,50 @@ def update_user_status(
     db.commit()
     db.refresh(user)
     return user
+
+
+# ---- Excluded Nicknames -------------------------------------------------
+
+@router.get("/excluded-nicknames", response_model=list[ExcludedNicknameRead])
+def list_excluded_nicknames(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin),
+):
+    return db.query(ExcludedNickname).order_by(ExcludedNickname.nickname).all()
+
+
+@router.post("/excluded-nicknames", response_model=ExcludedNicknameRead, status_code=201)
+def add_excluded_nickname(
+    payload: ExcludedNicknameCreate,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin),
+):
+    nickname = payload.nickname.strip()
+    existing = db.query(ExcludedNickname).filter(
+        func.lower(ExcludedNickname.nickname) == nickname.lower()
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Nickname already excluded",
+        )
+    entry = ExcludedNickname(nickname=nickname)
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+@router.delete("/excluded-nicknames/{nickname}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_excluded_nickname(
+    nickname: str,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin),
+):
+    entry = db.query(ExcludedNickname).filter(
+        func.lower(ExcludedNickname.nickname) == nickname.lower()
+    ).first()
+    if not entry:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nickname not found")
+    db.delete(entry)
+    db.commit()

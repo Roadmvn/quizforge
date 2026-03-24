@@ -186,3 +186,14 @@ class ParticipantResponse(Base):
     participant = relationship("Participant", back_populates="responses")
     question = relationship("Question")
     answer = relationship("Answer")
+
+
+# ---------------------------------------------------------------------------
+# Excluded Nickname (hidden from leaderboard ranking)
+# ---------------------------------------------------------------------------
+class ExcludedNickname(Base):
+    __tablename__ = "excluded_nicknames"
+
+    id: str = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    nickname: str = Column(String(50), unique=True, nullable=False, index=True)
+    created_at: datetime = Column(DateTime, default=lambda: datetime.now(timezone.utc))

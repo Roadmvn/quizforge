@@ -282,6 +282,7 @@ class ThemeLeaderboardEntry(BaseModel):
     best_score: int
     sessions_count: int
     rank: int
+    excluded: bool = False
 
 
 # ---- Session Leaderboard -------------------------------------------------
@@ -298,3 +299,18 @@ class SessionLeaderboardEntry(BaseModel):
     rank: int
     username: str
     score: int
+    excluded: bool = False
+
+
+# ---- Excluded Nicknames --------------------------------------------------
+
+class ExcludedNicknameRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    nickname: str
+    created_at: datetime
+
+
+class ExcludedNicknameCreate(BaseModel):
+    nickname: str = Field(min_length=1, max_length=50)
