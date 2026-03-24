@@ -83,8 +83,8 @@ jobs:
           key: ${{ secrets.PREPROD_SSH_KEY }}
           script: |
             cd /opt/quizforge
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            sudo docker compose -f docker-compose.prod.yml pull
+            sudo docker compose -f docker-compose.prod.yml up -d --force-recreate
             echo "✅ Préprod déployée"
 
   deploy-prod:
@@ -102,6 +102,6 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /opt/quizforge
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            sudo docker compose -f docker-compose.prod.yml pull
+            sudo docker compose -f docker-compose.prod.yml up -d --force-recreate
             echo "✅ Prod déployée"
