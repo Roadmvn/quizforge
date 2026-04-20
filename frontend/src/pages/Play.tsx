@@ -196,8 +196,8 @@ export default function Play() {
         {!failed && phase === 'waiting' && (
           <div className="text-center space-y-4">
             <div className="spinner-premium w-12 h-12 mx-auto" />
-            <h2 className="text-xl font-semibold text-[#e8e8f0]">En attente de l'hote...</h2>
-            <p className="text-[#6b6b80]">La partie va bientot commencer</p>
+            <h2 className="text-xl font-semibold text-[#e8e8f0]">Bienvenue a l'hotel</h2>
+            <p className="text-[#6b6b80]">En attente du debut de la partie...</p>
           </div>
         )}
 
